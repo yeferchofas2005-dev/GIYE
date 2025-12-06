@@ -21,6 +21,13 @@ class Cliente:
         return db.consultar(query, (f"%{nombre}%",))
 
     @staticmethod
+    def obtener_por_id(id_cliente):
+        db = conexion_bd()
+        query = "SELECT * FROM clientes WHERE id_cliente = %s"
+        resultados = db.consultar(query, (id_cliente,))
+        return resultados[0] if resultados else None
+
+    @staticmethod
     def obtener_todos():
         db = conexion_bd()
         query = "SELECT * FROM clientes"

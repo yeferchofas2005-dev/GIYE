@@ -13,6 +13,7 @@ class Controller:
         self.ventana = Ventana()
         self.empleado_en_turno = None
         self.id_empleado_en_turno = None
+        self.ventana.set_on_click_transaccion(self.mostrar_detalles_transaccion)
 
     def iniciar(self):
         self.ventana.set_panel_inicio(
@@ -45,7 +46,7 @@ class Controller:
                 abono = monto
                 total_abonos += monto
 
-            datos_tabla.append((nombre, debe, abono, fecha, "Ver"))
+            datos_tabla.append((transaccion["id_transaccion"], nombre, debe, abono, fecha, "Ver"))
 
         self.ventana.set_panel_dashboard(
             datos_tabla,
@@ -77,7 +78,7 @@ class Controller:
                 abono = monto
                 total_abonos += monto
 
-            datos_tabla.append((nombre, debe, abono, fecha, "Ver"))
+            datos_tabla.append((transaccion["id_transaccion"], nombre, debe, abono, fecha, "Ver"))
 
         self.ventana.set_panel_dashboard(
             datos_tabla,
@@ -230,7 +231,38 @@ class Controller:
             ]
             transacciones.sort(key=lambda x: float(x["monto"]))
 
-
-
         #Actualizar dashboard
         self._filtrar_dashboard(transacciones)
+
+    #metodo para mostrar la informacion de la fila seleccionada
+    def mostrar_detalles_transaccion(self, valores):
+        #Marcamos variables traidas desde la tabla principal.
+        id, cliente, deuda, abono, fecha, _ = valores
+
+        #Consultamos informacion sobre la transaccion y el cliente.
+        datos_transaccion = Transaccion.obtener_por_id(id)
+        datos_cliente = Cliente.obtener_por_id(datos_transaccion["id_cliente"])
+        
+        #Convertimos infoirmacion de la tabla (deuda o bono) a floats.
+        deuda = float(deuda)
+        abono = float(abono)
+
+        #En un string ponemos toda la informacion que queremos mostrar en una ventana emergente
+        datos = (
+            "──────── DETALLES DE LA TRANSACCIÓN ────────\n\n"
+            f"🧍 Cliente:           {cliente}\n"
+            f"📞 Teléfono:          {datos_cliente['telefono']}\n"
+            f"🏠 Dirección:         {datos_cliente['notas']}\n"
+            "---------------------------------------------\n"
+            f"📌 Tipo:              {datos_transaccion['tipo_transaccion']}\n"
+            f"📂 Subtipo:           {datos_transaccion['subtipo_transaccion']}\n"
+            f"📅 Fecha:             {valores[4]}\n"
+            f"💰 Monto:             {abono if abono > 0 else deuda}\n"
+            f"📝 Descripción:       {datos_transaccion['descripcion'] if datos_transaccion['descripcion'] else 'N/A'}\n"
+            f"📊 Estado de Deuda:   {datos_transaccion['estado_deuda']}\n"
+            f"👨‍💼 Encargado por:    {Cliente.obtener_nombre_por_id(datos_transaccion['id_empleado'])}\n"
+            "─────────────────────────────────────────────"
+        )
+
+        #Mostramos en la ventana la informacion
+        ventana_emergente.mostrar_informacion_transaccion("Datos transaccion", datos)

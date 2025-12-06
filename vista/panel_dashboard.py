@@ -158,7 +158,7 @@ class panel_dashboard(tk.Frame):
         tabla_frame = tk.Frame(self)
         tabla_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        columnas = ("Nombre", "Debe", "Abono", "Fecha", "Accion")
+        columnas = ("ID", "Nombre", "Debe", "Abono", "Fecha", "Accion")
 
         self.tabla = ttk.Treeview(
             tabla_frame,
@@ -201,7 +201,13 @@ class panel_dashboard(tk.Frame):
         )
         self.lbl_total_abono.pack(side="right")
 
+        self.tabla.column("ID", width=0, stretch=False)
+
+        self.tabla.bind("<<TreeviewSelect>>", self._on_row_click)
+        
         self.cargar_tabla()
+
+
 
     # ==============================
     # CARGAR TABLA
@@ -213,7 +219,7 @@ class panel_dashboard(tk.Frame):
 
         for fila in self.datos_tabla:
 
-            nombre, debe, abono, fecha, accion = fila
+            id_transaccion, nombre, debe, abono, fecha, accion = fila
 
             if debe > 0:
                 tag = "deuda"
@@ -259,3 +265,18 @@ class panel_dashboard(tk.Frame):
                 "orden": "",
                 "estado": ""
             })
+    
+    # ==============================
+    # Click dentro de una fila
+    # =============================
+    def _on_row_click(self, event):
+        item = self.tabla.focus()
+        if not item:
+            return
+        
+        valores = self.tabla.item(item, "values")
+
+        # Valores = (ID, NombreCliente, Debe, Abono, Fecha, "Ver")
+        if self.master.on_click_transaccion:
+            self.master.on_click_transaccion(valores)
+

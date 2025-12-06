@@ -33,6 +33,26 @@ class ventana_emergente:
     @staticmethod
     def pedir_decimal(titulo, mensaje):
         return simpledialog.askfloat(titulo, mensaje)
+    
+    @staticmethod
+    def mostrar_informacion_transaccion(titulo, mensaje):
+        ventana = tk.Toplevel()
+        ventana.title(titulo)
+
+        # Tamaño un poco mayor (responsive)
+        ventana.geometry("400x300")   # <-- Ajusta a gusto (ancho x alto)
+
+        # Texto con ajuste automático
+        lbl = tk.Label(
+            ventana,
+            text=mensaje,
+            justify="left",
+            anchor="nw"
+        )
+        lbl.pack(fill="both", expand=True, padx=15, pady=15)
+
+        btn = tk.Button(ventana, text="Cerrar", command=ventana.destroy)
+        btn.pack(pady=(0, 10))
 
 #Metodo para seleccionar de una lista
     @staticmethod
@@ -199,7 +219,3 @@ class ventana_emergente:
 
         ventana.wait_window()
         return resultado["datos"]
-
-
-
-

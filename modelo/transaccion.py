@@ -29,6 +29,13 @@ class Transaccion:
         db.ejecutar(query, (fecha_creacion, tipo_transaccion, subtipo_transaccion, monto, id_cliente, id_empleado, descripcion, referencia_original, saldo_afectado, estado_deuda))
 
     @staticmethod
+    def obtener_por_id(id_transaccion):
+        db = conexion_bd()
+        query = "SELECT * FROM transacciones WHERE id_transaccion = %s"
+        resultados = db.consultar(query, (id_transaccion,))
+        return resultados[0] if resultados else None
+    
+    @staticmethod
     def obtener_por_cliente(id_cliente):
         db = conexion_bd()
         query = "SELECT * FROM transacciones WHERE id_cliente = %s ORDER BY fecha_creacion DESC"

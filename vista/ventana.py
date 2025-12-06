@@ -21,6 +21,12 @@ class Ventana(tk.Tk):
 
         self.panel_actual = None
 
+        #callback para manejar clicks en transacciones
+        self.on_click_transaccion = None
+
+    # ==============================
+    # Metodo para cambiar de panel
+    # ==============================
     def _cambiar_panel(self, nuevo_panel):
         """Oculta el panel actual y muestra uno nuevo."""
         if self.panel_actual is not None:
@@ -28,6 +34,12 @@ class Ventana(tk.Tk):
 
         self.panel_actual = nuevo_panel
         self.panel_actual.pack(fill="both", expand=True)
+
+    # ==============================
+    # Metodo para click de las transacciones
+    # ==============================
+    def set_on_click_transaccion(self, callback):
+        self.on_click_transaccion = callback
 
     # ==============================
     # PANEL DE INICIO (con callbacks registrados)
@@ -50,5 +62,9 @@ class Ventana(tk.Tk):
             on_filtrar=on_filtrar
         )
         panel.on_filtrar_callback = on_filtrar
+
+        #Pasamos el callback de click de transaccion
+        panel.master.on_click_transaccion = self.on_click_transaccion
+
         self._cambiar_panel(panel)
 

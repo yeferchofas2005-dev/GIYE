@@ -47,3 +47,14 @@ class Cliente:
         if resultados:
             return resultados[0]['nombre']
         return None
+    
+    @staticmethod
+    def es_empleado(id_cliente):
+        db = conexion_bd()
+        query = "SELECT empleado FROM clientes WHERE id_cliente = %s"
+        resultado = db.consultar(query, (id_cliente,))
+        
+        if not resultado:
+            return False  # Si no existe el cliente, asumimos que no es empleado
+        
+        return bool(resultado[0]['empleado'])

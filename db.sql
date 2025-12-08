@@ -37,3 +37,10 @@ CREATE TABLE transacciones (
     FOREIGN KEY (id_empleado) REFERENCES clientes(id_cliente),
     FOREIGN KEY (referencia_original) REFERENCES transacciones(id_transaccion)
 );
+
+CREATE TABLE datos_configuracion (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_config VARCHAR(100) NOT NULL UNIQUE,
+    valor TEXT NOT NULL
+);
+

@@ -3,6 +3,7 @@ from vista.ventana_emergente import ventana_emergente
 
 from modelo.cliente import Cliente
 from modelo.transaccion import Transaccion
+from modelo.datos_configuracion import DatosConfiguracion
 from modelo.filtros import Filtros
 
 from datetime import datetime
@@ -36,17 +37,25 @@ class Controller:
             fecha = transaccion['fecha_creacion'].strftime("%Y-%m-%d-%H:%M:%S")
             tipo = transaccion['tipo_transaccion']
             monto = float(transaccion['monto'])
+            accion = ""
+
+            estado_deuda = transaccion["estado_deuda"]
 
             if tipo == "DEUDA":
                 debe = monto
                 abono = 0
-                total_deuda += monto
+
+                if estado_deuda == "PENDIENTE":
+                    total_deuda += monto
+                
+                accion = "Tachar"
             else:
                 debe = 0
                 abono = monto
                 total_abonos += monto
+                accion = "---"
 
-            datos_tabla.append((transaccion["id_transaccion"], nombre, debe, abono, fecha, "Ver"))
+            datos_tabla.append((transaccion["id_transaccion"], nombre, debe, abono, fecha, accion, estado_deuda))
 
         self.ventana.set_panel_dashboard(
             datos_tabla,
@@ -54,7 +63,8 @@ class Controller:
             total_abonos,
             on_nuevo_abono=self.registrar_nuevo_abono,
             on_nueva_deuda=self.registrar_nueva_deuda,
-            on_filtrar=self.aplicar_filtros
+            on_filtrar=self.aplicar_filtros,
+            on_trachar=self.tachar_deuda
         )
 
     #Metodo para actualizar dasboard usando filtros
@@ -68,17 +78,25 @@ class Controller:
             fecha = transaccion['fecha_creacion'].strftime("%Y-%m-%d-%H:%M:%S")
             tipo = transaccion['tipo_transaccion']
             monto = float(transaccion['monto'])
+            accion = ""
+
+            estado_deuda = transaccion["estado_deuda"]
 
             if tipo == "DEUDA":
                 debe = monto
                 abono = 0
-                total_deuda += monto
+
+                if estado_deuda == "PENDIENTE":
+                    total_deuda += monto
+                
+                accion = "Tachar"
             else:
                 debe = 0
                 abono = monto
                 total_abonos += monto
+                accion = "---"
 
-            datos_tabla.append((transaccion["id_transaccion"], nombre, debe, abono, fecha, "Ver"))
+            datos_tabla.append((transaccion["id_transaccion"], nombre, debe, abono, fecha, accion, estado_deuda))
 
         self.ventana.set_panel_dashboard(
             datos_tabla,
@@ -86,7 +104,8 @@ class Controller:
             total_abonos,
             self.registrar_nuevo_abono,
             self.registrar_nueva_deuda,
-            self.aplicar_filtros
+            self.aplicar_filtros,
+            self.tachar_deuda
         )
 
     def login_admin(self):
@@ -266,3 +285,30 @@ class Controller:
 
         #Mostramos en la ventana la informacion
         ventana_emergente.mostrar_informacion_transaccion("Datos transaccion", datos)
+
+    #Metodo para tachar una deuda como pagada
+    def tachar_deuda(self, id_transaccion):
+        
+        transaccion = Transaccion.obtener_por_id(id_transaccion)
+
+        if Cliente.es_empleado(transaccion["id_cliente"]):
+            ventana_emergente.mostrar_advertencia("Acción No Permitida", "No puedes tachar una deuda de un empleado.")
+            contraseña_admin = ventana_emergente.pedir_contraseña("Ingrese contrasela de administrador para continuar:", "Autenticación Requerida")
+            
+            if not contraseña_admin or not DatosConfiguracion.comparar_contraseña(contraseña_admin):
+                ventana_emergente.mostrar_error("Autenticación Fallida", "Contraseña de administrador incorrecta. No se puede tachar la deuda.")
+                return
+
+        #Preguntamos en ventana emergente si se confirma la deuda
+        confirmar = ventana_emergente.preguntar_confirmacion("Confirmar Tachar Deuda", "¿Estás seguro de que deseas marcar esta deuda como PAGADA?")
+
+        #Si no se retorna, cerramos el proceso
+        if not confirmar:
+            return
+
+        #Si se confirma el querer cambiar la deuda 
+        Transaccion.actualizar_estado(id_transaccion, "CANCELADA")
+
+        ventana_emergente.mostrar_informacion("Éxito", "La deuda ha sido cancelada correctamente !")
+
+        self.recargar_dashboard()

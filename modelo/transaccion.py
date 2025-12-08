@@ -8,7 +8,6 @@ from datetime import datetime
 class Transaccion:
 
     @staticmethod
-    
     def agregar(fecha_creacion, tipo_transaccion, subtipo_transaccion, monto, id_cliente, id_empleado, descripcion=None, referencia_original=None, saldo_afectado=0, estado_deuda='PENDIENTE'):
 
         db = conexion_bd()
@@ -34,7 +33,7 @@ class Transaccion:
         query = "SELECT * FROM transacciones WHERE id_transaccion = %s"
         resultados = db.consultar(query, (id_transaccion,))
         return resultados[0] if resultados else None
-    
+            
     @staticmethod
     def obtener_por_cliente(id_cliente):
         db = conexion_bd()

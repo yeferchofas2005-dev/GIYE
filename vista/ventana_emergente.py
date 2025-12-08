@@ -16,15 +16,21 @@ class ventana_emergente:
 
     @staticmethod
     def mostrar_error(titulo, mensaje):
+        text=mensaje,
         messagebox.showerror(titulo, mensaje)
+
+    @staticmethod
+    def preguntar_confirmacion(titulo, mensaje):
+        return messagebox.askyesno(titulo, mensaje)
+
 
     @staticmethod
     def confirmar(titulo, mensaje):
         return messagebox.askyesno(titulo, mensaje)
 
     @staticmethod
-    def pedir_texto(titulo, mensaje):
-        return simpledialog.askstring(titulo, mensaje)
+    def pedir_contraseña(titulo, mensaje):
+        return simpledialog.askstring(titulo, mensaje, show='#')
 
     @staticmethod
     def pedir_entero(titulo, mensaje):

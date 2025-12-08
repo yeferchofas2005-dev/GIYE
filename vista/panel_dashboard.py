@@ -6,7 +6,7 @@ from tkcalendar import DateEntry
 class panel_dashboard(tk.Frame):
 
     def __init__(self, master, datos_tabla, total_deuda, total_abono,
-                 on_nuevo_abono, on_nueva_deuda, on_filtrar):
+                 on_nuevo_abono, on_nueva_deuda, on_filtrar, on_tachar):
 
         super().__init__(master, bg="#0b4fa8")
 
@@ -14,6 +14,7 @@ class panel_dashboard(tk.Frame):
         self.total_deuda = total_deuda
         self.total_abono = total_abono
         self.on_filtrar_callback = on_filtrar
+        self.on_tachar = on_tachar
 
         # ==============================
         # SECCIÓN SUPERIOR (BARRA PRINCIPAL)
@@ -175,6 +176,7 @@ class panel_dashboard(tk.Frame):
 
         self.tabla.tag_configure("deuda", background="#e63946")
         self.tabla.tag_configure("abono", background="#2ecc71")
+        self.tabla.tag_configure("tachado", foreground="gray", font=("Arial", 11, "overstrike"))
 
         # ==============================
         # PARTE INFERIOR (TOTALES)
@@ -203,33 +205,88 @@ class panel_dashboard(tk.Frame):
 
         self.tabla.column("ID", width=0, stretch=False)
 
-        self.tabla.bind("<<TreeviewSelect>>", self._on_row_click)
+        self.tabla.bind("<ButtonRelease-1>", self._on_row_click)
         
         self.cargar_tabla()
-
-
 
     # ==============================
     # CARGAR TABLA
     # ==============================
+    # def cargar_tabla(self):
+
+    #     for item in self.tabla.get_children():
+    #         self.tabla.delete(item)
+
+    #     for fila in self.datos_tabla:
+
+    #         id_transaccion, nombre, debe, abono, fecha, accion = fila
+
+    #         if debe > 0:
+    #             tag = "deuda"
+    #         elif abono > 0:
+    #             tag = "abono"
+    #         else:
+    #             tag = ""
+
+    #         self.tabla.insert("", "end", values=fila, tags=(tag,))
+
+    #     self.lbl_total_deuda.config(text=f"Total Deuda: ${self.total_deuda:.0f}")
+    #     self.lbl_total_abono.config(text=f"Total Abono: ${self.total_abono:.0f}")
+
+
     def cargar_tabla(self):
 
+        # limpiar tabla
         for item in self.tabla.get_children():
             self.tabla.delete(item)
 
+        # Asegurarse de tener el tag para filas tachadas (gris + overstrike)
+        try:
+            self.tabla.tag_configure("tachado", foreground="gray", font=("TkDefaultFont", 10, "overstrike"))
+        except Exception:
+            # en caso de que la plataforma no acepte overstrike directamente, al menos coloreamos
+            self.tabla.tag_configure("tachado", foreground="gray")
+
+        # Iterar filas recibidas (acepta tuplas de 6 o 7 elementos)
         for fila in self.datos_tabla:
 
-            id_transaccion, nombre, debe, abono, fecha, accion = fila
+            # soportar ambos formatos: (id,nombre,debe,abono,fecha,accion)  o
+            # (id,nombre,debe,abono,fecha,accion,estado_deuda)
+            estado = None
+            if len(fila) == 7:
+                id_transaccion, nombre, debe, abono, fecha, accion, estado = fila
+                valores_insert = fila[:6]   # Treeview tiene 6 columnas: dejamos solo las 6 primeras
+            else:
+                id_transaccion, nombre, debe, abono, fecha, accion = fila
+                valores_insert = fila
 
-            if debe > 0:
+            # convertirDebe/Abono a número para evaluar (si vienen como string)
+            try:
+                debe_val = float(debe)
+            except Exception:
+                debe_val = 0
+            try:
+                abono_val = float(abono)
+            except Exception:
+                abono_val = 0
+
+            # determinar tag base por tipo (deuda/abono)
+            if estado == "CANCELADA":
+                tag = "tachado"
+            elif debe_val > 0:
                 tag = "deuda"
-            elif abono > 0:
+            elif abono_val > 0:
                 tag = "abono"
             else:
                 tag = ""
 
-            self.tabla.insert("", "end", values=fila, tags=(tag,))
+            # insertar la fila con el/los tags correspondientes
+            if tag:
+                self.tabla.insert("", "end", values=valores_insert, tags=(tag,))
+            else:
+                self.tabla.insert("", "end", values=valores_insert)
 
+        # actualizar totales en la UI
         self.lbl_total_deuda.config(text=f"Total Deuda: ${self.total_deuda:.0f}")
         self.lbl_total_abono.config(text=f"Total Abono: ${self.total_abono:.0f}")
 
@@ -273,10 +330,15 @@ class panel_dashboard(tk.Frame):
         item = self.tabla.focus()
         if not item:
             return
-        
         valores = self.tabla.item(item, "values")
+        
+        #Definimos que si el click es en la columna 6
+        columna = self.tabla.identify_column(event.x)
+        
+        if columna == "#6":
+            if valores[5] == "Tachar":
+               self.on_tachar(valores[0])
 
         # Valores = (ID, NombreCliente, Debe, Abono, Fecha, "Ver")
         if self.master.on_click_transaccion:
             self.master.on_click_transaccion(valores)
-

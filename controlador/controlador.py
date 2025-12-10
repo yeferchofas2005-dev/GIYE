@@ -36,7 +36,7 @@ class Controller:
             nombre = Cliente.obtener_nombre_por_id(transaccion['id_cliente'])
             fecha = transaccion['fecha_creacion'].strftime("%Y-%m-%d-%H:%M:%S")
             tipo = transaccion['tipo_transaccion']
-            monto = float(transaccion['monto'])
+            monto = int(transaccion['monto'])
             accion = ""
 
             estado_deuda = transaccion["estado_deuda"]
@@ -54,13 +54,17 @@ class Controller:
                 abono = monto
                 total_abonos += monto
                 accion = "---"
-
+            
             datos_tabla.append((transaccion["id_transaccion"], nombre, debe, abono, fecha, accion, estado_deuda))
+
+        #Separamos los digitos de los totales para claridad del usuario.
+        total_abonos_formateado = f'{total_abonos:,}'.replace(',', '.')
+        total_deudas_formateado = f'{total_deuda:,}'.replace(',', '.')
 
         self.ventana.set_panel_dashboard(
             datos_tabla,
-            total_deuda,
-            total_abonos,
+            total_deudas_formateado,
+            total_abonos_formateado,
             on_nuevo_abono=self.registrar_nuevo_abono,
             on_nueva_deuda=self.registrar_nueva_deuda,
             on_filtrar=self.aplicar_filtros,
@@ -68,7 +72,7 @@ class Controller:
         )
 
     #Metodo para actualizar dasboard usando filtros
-    def _filtrar_dashboard(self, transacciones):
+    def recargar_dashboard_filtros(self, transacciones):
         datos_tabla = []
         total_deuda = 0
         total_abonos = 0
@@ -77,7 +81,7 @@ class Controller:
             nombre = Cliente.obtener_nombre_por_id(transaccion['id_cliente'])
             fecha = transaccion['fecha_creacion'].strftime("%Y-%m-%d-%H:%M:%S")
             tipo = transaccion['tipo_transaccion']
-            monto = float(transaccion['monto'])
+            monto = int(transaccion['monto'])
             accion = ""
 
             estado_deuda = transaccion["estado_deuda"]
@@ -98,10 +102,14 @@ class Controller:
 
             datos_tabla.append((transaccion["id_transaccion"], nombre, debe, abono, fecha, accion, estado_deuda))
 
+        #Separamos los digitos de los totales para claridad del usuario.
+        total_abonos_formateado = f'{total_abonos:,}'.replace(',', '.')
+        total_deudas_formateado = f'{total_deuda:,}'.replace(',', '.')
+        
         self.ventana.set_panel_dashboard(
             datos_tabla,
-            total_deuda,
-            total_abonos,
+            total_deudas_formateado,
+            total_abonos_formateado,
             self.registrar_nuevo_abono,
             self.registrar_nueva_deuda,
             self.aplicar_filtros,
@@ -111,6 +119,7 @@ class Controller:
     def login_admin(self):
         print("Login como Admin")
 
+    #Login de empleado
     def login_empleado(self):
         empleados = Cliente.obtener_empleados()
 
@@ -187,22 +196,6 @@ class Controller:
         ventana_emergente.mostrar_informacion("Éxito", "Deuda registrada correctamente.")
         self.recargar_dashboard()
 
-    #Registrar nuevo cliente:
-    # def agregar_cliente(self):
-    #     datos_cliente = ventana_emergente.pedir_datos_cliente()
-
-    #     if datos_cliente:
-    #         Cliente.agregar(
-    #             nombre=datos_cliente["nombre"],
-    #             telefono=datos_cliente["telefono"],
-    #             notas=datos_cliente["notas"],
-    #             empleado=False
-    #         )
-        
-    #         ventana_emergente.mostrar_informacion("Éxito", "Cliente agregado correctamente.")
-    #     else:
-    #         ventana_emergente.mostrar_advertencia("Acción Cancelada", "No se agregaron datos del cliente.") 
-
     def agregar_cliente(self):
         # Pedir datos al usuario
         datos_cliente = ventana_emergente.pedir_datos_cliente()
@@ -231,8 +224,7 @@ class Controller:
             "notas": datos_cliente["notas"]
         }
 
-
-
+    #Metodo encargado de aplicar los fltros al dashboard
     def aplicar_filtros(self, filtros):
 
         transacciones = Transaccion.obtener_todas()
@@ -299,7 +291,7 @@ class Controller:
             transacciones.sort(key=lambda x: float(x["monto"]))
 
         #Actualizar dashboard
-        self._filtrar_dashboard(transacciones)
+        self.recargar_dashboard_filtros(transacciones)
 
     #metodo para mostrar la informacion de la fila seleccionada
     def mostrar_detalles_transaccion(self, valores):

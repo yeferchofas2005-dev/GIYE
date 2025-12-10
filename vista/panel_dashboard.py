@@ -212,28 +212,6 @@ class panel_dashboard(tk.Frame):
     # ==============================
     # CARGAR TABLA
     # ==============================
-    # def cargar_tabla(self):
-
-    #     for item in self.tabla.get_children():
-    #         self.tabla.delete(item)
-
-    #     for fila in self.datos_tabla:
-
-    #         id_transaccion, nombre, debe, abono, fecha, accion = fila
-
-    #         if debe > 0:
-    #             tag = "deuda"
-    #         elif abono > 0:
-    #             tag = "abono"
-    #         else:
-    #             tag = ""
-
-    #         self.tabla.insert("", "end", values=fila, tags=(tag,))
-
-    #     self.lbl_total_deuda.config(text=f"Total Deuda: ${self.total_deuda:.0f}")
-    #     self.lbl_total_abono.config(text=f"Total Abono: ${self.total_abono:.0f}")
-
-
     def cargar_tabla(self):
 
         # limpiar tabla
@@ -287,11 +265,11 @@ class panel_dashboard(tk.Frame):
                 self.tabla.insert("", "end", values=valores_insert)
 
         # actualizar totales en la UI
-        self.lbl_total_deuda.config(text=f"Total Deuda: ${self.total_deuda:.0f}")
-        self.lbl_total_abono.config(text=f"Total Abono: ${self.total_abono:.0f}")
+        self.lbl_total_deuda.config(text=f"Total Deuda: ${self.total_deuda}")
+        self.lbl_total_abono.config(text=f"Total Abono: ${self.total_abono}")
 
     # ==============================
-    # 🔍 APLICAR FILTROS
+    # APLICAR FILTROS
     # ==============================
     def on_filtrar(self):
 
@@ -306,7 +284,7 @@ class panel_dashboard(tk.Frame):
             self.on_filtrar_callback(filtros)
 
     # ==============================
-    # 🧹 LIMPIAR FILTROS
+    # LIMPIAR FILTROS
     # ==============================
     def limpiar_filtros(self):
 

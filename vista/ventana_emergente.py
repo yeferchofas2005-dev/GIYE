@@ -1,11 +1,14 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
 
+from modelo.cliente import Cliente 
+
 class ventana_emergente:
 
-#Metodos estatico donde se usa MessageBox para mostrar mensajes emergentes
+    # ============================
+    #  MENSAJES BÁSICOS
+    # ============================
 
-#Metodos de ventanas emergentes basicos
     @staticmethod
     def mostrar_informacion(titulo, mensaje):
         messagebox.showinfo(titulo, mensaje)
@@ -16,13 +19,11 @@ class ventana_emergente:
 
     @staticmethod
     def mostrar_error(titulo, mensaje):
-        text=mensaje,
         messagebox.showerror(titulo, mensaje)
 
     @staticmethod
     def preguntar_confirmacion(titulo, mensaje):
         return messagebox.askyesno(titulo, mensaje)
-
 
     @staticmethod
     def confirmar(titulo, mensaje):
@@ -39,16 +40,13 @@ class ventana_emergente:
     @staticmethod
     def pedir_decimal(titulo, mensaje):
         return simpledialog.askfloat(titulo, mensaje)
-    
+
     @staticmethod
     def mostrar_informacion_transaccion(titulo, mensaje):
         ventana = tk.Toplevel()
         ventana.title(titulo)
+        ventana.geometry("400x300")
 
-        # Tamaño un poco mayor (responsive)
-        ventana.geometry("400x300")   # <-- Ajusta a gusto (ancho x alto)
-
-        # Texto con ajuste automático
         lbl = tk.Label(
             ventana,
             text=mensaje,
@@ -60,7 +58,10 @@ class ventana_emergente:
         btn = tk.Button(ventana, text="Cerrar", command=ventana.destroy)
         btn.pack(pady=(0, 10))
 
-#Metodo para seleccionar de una lista
+
+    # ============================
+    #  SELECCIONAR ELEMENTO
+    # ============================
     @staticmethod
     def seleccionar_de_lista(titulo, mensaje, lista):
         if not lista:
@@ -71,14 +72,11 @@ class ventana_emergente:
         ventana.geometry("350x190")
         ventana.resizable(False, False)
 
-        ventana.grab_set()    
+        ventana.grab_set()
         ventana.focus()
 
-        tk.Label(
-            ventana, text=mensaje, font=("Arial", 12)
-        ).pack(pady=10)
+        tk.Label(ventana, text=mensaje, font=("Arial", 12)).pack(pady=10)
 
-        # Mostrar nombres si viene una lista de diccionarios
         if isinstance(lista[0], dict):
             valores = [item["nombre"] for item in lista]
         else:
@@ -96,7 +94,6 @@ class ventana_emergente:
 
         seleccionado = {"valor": None}
 
-        #Boton de aceptar y cancelar para el metodo de seleccionar de lista
         def aceptar():
             idx = combo.current()
             seleccionado["valor"] = lista[idx]
@@ -112,12 +109,14 @@ class ventana_emergente:
         tk.Button(frame, text="Cancelar", width=10, command=cancelar).pack(side="left", padx=5)
 
         ventana.wait_window()
-
         return seleccionado["valor"]
-    
-#Metodo para pedir informacion para la creacion de transacciones
+
+
+    # ============================
+    #  PEDIR DATOS TRANSACCIÓN
+    # ============================
     @staticmethod
-    def pedir_datos_transaccion(titulo, tipo, clientes):
+    def pedir_datos_transaccion(titulo, tipo, clientes, on_agregar_cliente):
         ventana = tk.Toplevel()
         ventana.title(titulo)
         ventana.geometry("420x360")
@@ -127,9 +126,7 @@ class ventana_emergente:
 
         resultado = {"datos": None}
 
-        # =========================
-        # CLIENTE
-        # =========================
+        # ========== CLIENTE ==========
         tk.Label(ventana, text="Cliente:", font=("Arial", 11)).pack(pady=(10, 0))
 
         frame_cliente = tk.Frame(ventana)
@@ -146,22 +143,37 @@ class ventana_emergente:
         combo_cliente.pack(side="left", padx=5)
         combo_cliente.current(0)
 
-        # Boton para agregar cliente
+        # ------ REFRESCAR CLIENTES ------
+        def refrescar_clientes():  # evitar import cíclico
+            nuevos_clientes = Cliente.obtener_todos()
+            nuevos_nombres = [c["nombre"] for c in nuevos_clientes]
+
+            combo_cliente["values"] = nuevos_nombres
+            combo_cliente.current(len(nuevos_nombres) - 1)
+
+            clientes.clear()
+            clientes.extend(nuevos_clientes)
+
+        # ------ AGREGAR CLIENTE + REFRESCAR ------
+        def agregar_cliente_y_refrescar():
+            datos = on_agregar_cliente()  # Llama al controlador
+            if datos:
+                refrescar_clientes()
+
         btn_agregar_cliente = tk.Button(
             frame_cliente,
             text="Agregar Cliente",
-            width=15
+            width=15,
+            command=agregar_cliente_y_refrescar
         )
         btn_agregar_cliente.pack(side="left", padx=5)
 
-        # =========================
-        # SUBTIPO (DINÁMICO)
-        # =========================
+        # ========== SUBTIPO ==========
         tk.Label(ventana, text="Subtipo:", font=("Arial", 11)).pack(pady=(10, 0))
 
         if tipo == "ABONO":
             opciones_subtipo = ["PAGO_DEUDA", "NEQUI_RECIBIDO", "OTROS_INGRESOS"]
-        else:  # DEUDA
+        else:
             opciones_subtipo = ["FIADO", "PRESTAMO", "NEQUI_PENDIENTE"]
 
         combo_subtipo = ttk.Combobox(
@@ -173,23 +185,17 @@ class ventana_emergente:
         combo_subtipo.pack(pady=5)
         combo_subtipo.current(0)
 
-        # =========================
-        # MONTO
-        # =========================
+        # ========== MONTO ==========
         tk.Label(ventana, text="Monto:", font=("Arial", 11)).pack(pady=(10, 0))
         entry_monto = tk.Entry(ventana, width=30)
         entry_monto.pack(pady=5)
 
-        # =========================
-        # DESCRIPCIÓN
-        # =========================
+        # ========== DESCRIPCIÓN ==========
         tk.Label(ventana, text="Descripción:", font=("Arial", 11)).pack(pady=(10, 0))
         entry_descripcion = tk.Entry(ventana, width=30)
         entry_descripcion.pack(pady=5)
 
-        # =========================
-        # BOTONES
-        # =========================
+        # ========== BOTONES ==========
         frame_botones = tk.Frame(ventana)
         frame_botones.pack(pady=20)
 
@@ -216,6 +222,62 @@ class ventana_emergente:
 
             except:
                 messagebox.showerror("Error", "Datos inválidos. Verifique el monto.")
+
+        def cancelar():
+            ventana.destroy()
+
+        tk.Button(frame_botones, text="Guardar", width=12, command=guardar).pack(side="left", padx=10)
+        tk.Button(frame_botones, text="Cancelar", width=12, command=cancelar).pack(side="left", padx=10)
+
+        ventana.wait_window()
+        return resultado["datos"]
+
+
+    # ============================
+    #  PEDIR DATOS CLIENTE
+    # ============================
+    @staticmethod
+    def pedir_datos_cliente():
+        ventana = tk.Toplevel()
+        ventana.title("Nuevo Cliente")
+        ventana.geometry("350x300")
+        ventana.resizable(False, False)
+        ventana.grab_set()
+        ventana.focus()
+
+        resultado = {"datos": None}
+
+        tk.Label(ventana, text="Nombre:", font=("Arial", 11)).pack(pady=(10, 0))
+        entry_nombre = tk.Entry(ventana, width=30)
+        entry_nombre.pack(pady=5)
+
+        tk.Label(ventana, text="Teléfono:", font=("Arial", 11)).pack(pady=(10, 0))
+        entry_telefono = tk.Entry(ventana, width=30)
+        entry_telefono.pack(pady=5)
+
+        tk.Label(ventana, text="Notas / Dirección:", font=("Arial", 11)).pack(pady=(10, 0))
+        entry_notas = tk.Entry(ventana, width=30)
+        entry_notas.pack(pady=5)
+
+        frame_botones = tk.Frame(ventana)
+        frame_botones.pack(pady=20)
+
+        def guardar():
+            nombre = entry_nombre.get().strip()
+            telefono = entry_telefono.get().strip()
+            notas = entry_notas.get().strip()
+
+            if nombre == "":
+                messagebox.showerror("Error", "El nombre no puede estar vacío.")
+                return
+
+            resultado["datos"] = {
+                "nombre": nombre,
+                "telefono": telefono,
+                "notas": notas
+            }
+
+            ventana.destroy()
 
         def cancelar():
             ventana.destroy()

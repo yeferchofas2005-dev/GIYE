@@ -135,7 +135,8 @@ class Controller:
         datos = ventana_emergente.pedir_datos_transaccion(
             "Nuevo Abono",
             "ABONO",
-            clientes
+            clientes, 
+            self.agregar_cliente
         )
 
         if datos is None:
@@ -164,7 +165,8 @@ class Controller:
         datos = ventana_emergente.pedir_datos_transaccion(
             "Nueva Deuda",
             "DEUDA",
-            clientes
+            clientes,
+            self.agregar_cliente
         )
 
         if datos is None:
@@ -184,6 +186,52 @@ class Controller:
 
         ventana_emergente.mostrar_informacion("Éxito", "Deuda registrada correctamente.")
         self.recargar_dashboard()
+
+    #Registrar nuevo cliente:
+    # def agregar_cliente(self):
+    #     datos_cliente = ventana_emergente.pedir_datos_cliente()
+
+    #     if datos_cliente:
+    #         Cliente.agregar(
+    #             nombre=datos_cliente["nombre"],
+    #             telefono=datos_cliente["telefono"],
+    #             notas=datos_cliente["notas"],
+    #             empleado=False
+    #         )
+        
+    #         ventana_emergente.mostrar_informacion("Éxito", "Cliente agregado correctamente.")
+    #     else:
+    #         ventana_emergente.mostrar_advertencia("Acción Cancelada", "No se agregaron datos del cliente.") 
+
+    def agregar_cliente(self):
+        # Pedir datos al usuario
+        datos_cliente = ventana_emergente.pedir_datos_cliente()
+
+        # Si el usuario canceló
+        if not datos_cliente:
+            ventana_emergente.mostrar_advertencia("Acción Cancelada", "No se agregaron datos del cliente.")
+            return None
+
+        # Guardar en BD
+        nuevo_id = Cliente.agregar(
+            nombre=datos_cliente["nombre"],
+            telefono=datos_cliente["telefono"],
+            notas=datos_cliente["notas"],
+            empleado=False
+        )
+
+        # Mostrar confirmación
+        ventana_emergente.mostrar_informacion("Éxito", "Cliente agregado correctamente.")
+
+        # Devolver los datos del nuevo cliente para refrescar el combobox
+        return {
+            "id_cliente": nuevo_id,
+            "nombre": datos_cliente["nombre"],
+            "telefono": datos_cliente["telefono"],
+            "notas": datos_cliente["notas"]
+        }
+
+
 
     def aplicar_filtros(self, filtros):
 

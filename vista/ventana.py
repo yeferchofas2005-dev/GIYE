@@ -51,7 +51,7 @@ class Ventana(tk.Tk):
     # ==============================
     # PANEL PRINCIPAL (Dashboard)
     # ==============================
-    def set_panel_dashboard(self, datos_tabla, total_deuda, total_abono, on_nuevo_abono, on_nueva_deuda, on_filtrar, on_trachar):
+    def set_panel_dashboard(self, datos_tabla, total_deuda, total_abono, on_nuevo_abono, on_nueva_deuda, on_filtrar, on_trachar, on_regresar):
         panel = panel_dashboard(
             self.contenedor,
             datos_tabla,
@@ -60,7 +60,8 @@ class Ventana(tk.Tk):
             on_nuevo_abono=on_nuevo_abono,
             on_nueva_deuda=on_nueva_deuda,
             on_filtrar=on_filtrar,
-            on_tachar=on_trachar
+            on_tachar=on_trachar, 
+            on_regresar=on_regresar
         )
         panel.on_filtrar_callback = on_filtrar
 

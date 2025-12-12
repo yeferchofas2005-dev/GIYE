@@ -6,7 +6,7 @@ from tkcalendar import DateEntry
 class panel_dashboard(tk.Frame):
 
     def __init__(self, master, datos_tabla, total_deuda, total_abono,
-                 on_nuevo_abono, on_nueva_deuda, on_filtrar, on_tachar):
+                 on_nuevo_abono, on_nueva_deuda, on_filtrar, on_tachar, on_regresar):
 
         super().__init__(master, bg="#0b4fa8")
 
@@ -15,6 +15,7 @@ class panel_dashboard(tk.Frame):
         self.total_abono = total_abono
         self.on_filtrar_callback = on_filtrar
         self.on_tachar = on_tachar
+        self.on_regresar = on_regresar
 
         # ==============================
         # SECCIÓN SUPERIOR (BARRA PRINCIPAL)
@@ -24,7 +25,7 @@ class panel_dashboard(tk.Frame):
         barra_principal.pack(fill="x", padx=10, pady=10)
 
         # ==============================
-        # 🟦 BLOQUE IZQUIERDO (FILTROS)
+        # BLOQUE IZQUIERDO (FILTROS)
         # ==============================
         bloque_filtros = tk.Frame(barra_principal, bg="#0b4fa8")
         bloque_filtros.pack(side="left", fill="x", expand=True)
@@ -95,7 +96,7 @@ class panel_dashboard(tk.Frame):
         self.combo_estado.pack(side="left", padx=5)
 
         # ==============================
-        # 🟨 BLOQUE CENTRO (BUSCAR / LIMPIAR)
+        # BLOQUE CENTRO (BUSCAR / LIMPIAR / Regresar)
         # ==============================
         bloque_acciones = tk.Frame(barra_principal, bg="#0b4fa8")
         bloque_acciones.pack(side="left", padx=15)
@@ -122,8 +123,20 @@ class panel_dashboard(tk.Frame):
         )
         self.btn_limpiar.pack(side="left", padx=5)
 
+        btn_regresar = tk.Button(
+            barra_principal,
+            text="⬅ Regresar",
+            bg="#1f1f1f",
+            fg="white",
+            font=("Arial", 12, "bold"),
+            padx=10,
+            pady=5,
+            command=self.on_regresar
+        )
+        btn_regresar.pack(side="left", padx=10)
+
         # ==============================
-        # 🟥 BLOQUE DERECHO (BOTONES GRANDES)
+        # BLOQUE DERECHO (BOTONES GRANDES)
         # ==============================
         bloque_botones = tk.Frame(barra_principal, bg="#0b4fa8")
         bloque_botones.pack(side="right")

@@ -1,6 +1,7 @@
 import tkinter as tk
 
 from vista.panel_dashboard import panel_dashboard
+from vista.panel_administrador import panel_administrador
 from vista.panel_inicio import panel_inicio
 
 class Ventana(tk.Tk):
@@ -70,3 +71,43 @@ class Ventana(tk.Tk):
 
         self._cambiar_panel(panel)
 
+    # ==============================
+    # PANEL ADMINISTRADOR
+    # ==============================
+    def set_panel_administrador(
+        self,
+        on_regresar,
+        on_empleados,
+        on_backup,
+        on_importar_excel,
+        on_cambiar_contraseña,
+        on_estadisticas
+    ):
+        """
+        Carga el panel de administración del sistema.
+
+        Este método:
+        - Crea el panel_administrador
+        - Inyecta los callbacks necesarios
+        - Reemplaza el panel actual por el panel administrador
+
+        Args:
+            on_regresar (callable): vuelve al panel de inicio
+            on_empleados (callable): gestión de empleados (CRUD)
+            on_backup (callable): crear/restaurar backup
+            on_importar_excel (callable): importar datos desde Excel
+            on_cambiar_contraseña (callable): cambiar contraseña admin
+            on_estadisticas (callable): ver estadísticas del sistema
+        """
+
+        panel = panel_administrador(
+            self.contenedor,
+            on_regresar=on_regresar,
+            on_empleados=on_empleados,
+            on_backup=on_backup,
+            on_importar_excel=on_importar_excel,
+            on_cambiar_contraseña=on_cambiar_contraseña,
+            on_estadisticas=on_estadisticas
+        )
+
+        self._cambiar_panel(panel)

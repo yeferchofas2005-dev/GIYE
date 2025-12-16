@@ -177,9 +177,25 @@ class Controller:
     def login_admin(self):
         """
         Handler para el login de administrador.
-        Actualmente solo imprime en consola; en el futuro podría abrir un panel admin.
+        Abre panel de administrador, encargado de:
+        - Agregar, Eliminar, Editar un empleado.
+        - Enviar Backup de la base de datos via mail en formato XLS.
+        - Importar datos desde un archivo XLS.
+        - Cambiar la contraseña de administrador.
         """
-        print("Login como Admin")
+        contraseña = ventana_emergente.pedir_contraseña("Login admin.", "Ingrese la contraseña de administrador:")
+
+        if DatosConfiguracion.comparar_contraseña(contraseña):
+            self.ventana.set_panel_administrador(
+                on_regresar=self.regresar_inicio,
+                on_empleados=self.gestionar_empleados,
+                on_backup=self.crear_backup,
+                on_importar_excel=self.importar_excel,
+                on_cambiar_contraseña=self.cambiar_contraseña_admin,
+                on_estadisticas=self.ver_estadisticas
+            )
+        else:
+            ventana_emergente.mostrar_error("Error de Autenticación", "Contraseña de administrador incorrecta.")
 
     # Login de empleado
     def login_empleado(self):
@@ -209,7 +225,9 @@ class Controller:
         # Cargar el dashboard con las transacciones
         self.recargar_dashboard()
 
-    # ---------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# LOGICA DE DASHBOARD
+# -------------------------------------------------------------------------
     # REGISTRO DE TRANSACCIONES
     # ---------------------------------------------------------------------
     # Metodo para registrar un nuevo abono
@@ -480,3 +498,26 @@ class Controller:
 
         # Recargamos el dashboard para reflejar el cambio
         self.recargar_dashboard()
+
+# -------------------------------------------------------------------------
+# LOGICA DE DASHBOARD
+# -------------------------------------------------------------------------
+    #Gestio0n de empleados
+    def gestionar_empleados(self):
+        print("Gestionar empleados")
+    
+    #Crear backup
+    def crear_backup(self):
+        print("Crear backup")
+
+    #Importar desde excel
+    def importar_excel(self):
+        print("Importar desde excel")
+
+    #Cambiar contraseña admin
+    def cambiar_contraseña_admin(self):
+        print("Cambiar contraseña admin")
+
+    #Ver estadísticas
+    def ver_estadisticas(self):
+        print("Ver estadísticas")

@@ -185,6 +185,11 @@ class Controller:
         """
         contraseña = ventana_emergente.pedir_contraseña("Login admin.", "Ingrese la contraseña de administrador:")
 
+        #Parar el proceso en caso que el usuario no ingrese contrazeñ.
+        if contraseña is None:
+            ventana_emergente.mostrar_error("Error!", "Debe ingresar una contraseña.")
+            return
+    
         if DatosConfiguracion.comparar_contraseña(contraseña):
             self.ventana.set_panel_administrador(
                 on_regresar=self.regresar_inicio,
@@ -334,7 +339,7 @@ class Controller:
         # Mostrar confirmación
         ventana_emergente.mostrar_informacion("Éxito", "Cliente agregado correctamente.")
 
-        # Devolver los datos del nuevo cliente para que la vista pueda refrescarse si lo desea
+        # Devolver los datos del nuevo cliente para que la vista pueda refrescarse.
         return {
             "id_cliente": nuevo_id,
             "nombre": datos_cliente["nombre"],
@@ -500,12 +505,150 @@ class Controller:
         self.recargar_dashboard()
 
 # -------------------------------------------------------------------------
-# LOGICA DE DASHBOARD
+# LOGICA DE PANEL ADMINISTRADOR
 # -------------------------------------------------------------------------
-    #Gestio0n de empleados
+   
+    # GESTIÓN DE EMPLEADOS
     def gestionar_empleados(self):
-        print("Gestionar empleados")
-    
+        """
+        Carga el módulo de gestión de empleados.
+
+        - Obtiene la lista de empleados desde la base de datos
+        - Inicializa el panel de administración de empleados
+        - Inyecta las funciones del controlador para CRUD
+        """
+        # Obtener todos los empleados desde el modelo
+        empleados = Cliente.obtener_empleados()
+
+        # Cargar el panel de administración de empleados
+        # y pasarle los callbacks del controlador
+        self.ventana.set_panel_administrador_empleado(
+            empleados,
+            self.agregar_empleado,
+            self.editar_empleado,
+            self.eliminar_empleado,
+            self.regresar_inicio
+        )
+
+    # AGREGAR EMPLEADO
+    def agregar_empleado(self):
+        """
+        Solicita los datos de un nuevo empleado,
+        los guarda en la base de datos y devuelve
+        el empleado creado para actualizar la vista.
+        """
+        # Pedir datos al usuario mediante ventana emergente
+        datos_empleado = ventana_emergente.pedir_datos_cliente()
+
+        # Si el usuario cancela o no ingresa datos
+        if not datos_empleado:
+            ventana_emergente.mostrar_advertencia(
+                "Acción Cancelada",
+                "No se agregaron datos del empleado."
+            )
+            return None
+
+        # Guardar el nuevo empleado en la base de datos
+        nuevo_id = Cliente.agregar(
+            nombre=datos_empleado["nombre"],
+            telefono=datos_empleado["telefono"],
+            notas=datos_empleado["notas"],
+            empleado=True
+        )
+
+        # Confirmación visual al usuario
+        ventana_emergente.mostrar_informacion(
+            "Éxito",
+            "Empleado agregado correctamente."
+        )
+
+        # Refrescamos panel de gestion de empleados
+        self.gestionar_empleados()
+
+    # EDITAR EMPLEADO
+    def editar_empleado(self, datos):
+        """
+        Edita los datos de un empleado existente.
+
+        - Recibe los datos actuales desde la vista
+        - Muestra formulario de edición
+        - Actualiza la base de datos
+        - Retorna el empleado actualizado para refrescar la tabla
+        """
+        # Convertir los datos recibidos en un diccionario
+        datos_empleado = {
+            "id_cliente": datos[0],
+            "nombre": datos[1],
+            "telefono": datos[2],
+            "notas": datos[3]
+        }
+
+        # Mostrar formulario de edición con datos actuales
+        datos_actualizados = ventana_emergente.editar_datos_empleado(datos_empleado)
+
+        # Si el usuario cancela o no completa los datos
+        if not datos_actualizados:
+            ventana_emergente.mostrar_advertencia(
+                "Sin datos",
+                "Debe completar los datos para editar el empleado."
+            )
+            return None
+
+        # Actualizar los datos del empleado en la base de datos
+        Cliente.actualizar_empleado(
+            datos_actualizados["id_cliente"],
+            datos_actualizados["nombre"],
+            datos_actualizados["telefono"],
+            datos_actualizados["notas"]
+        )
+
+        # Confirmación visual
+        ventana_emergente.mostrar_informacion(
+            "Éxito",
+            f"Empleado {datos_actualizados['nombre']} actualizado correctamente."
+        )
+
+        # Refrescamos panel de gestion de empleados
+        self.gestionar_empleados()
+
+    # ELIMINAR EMPLEADO
+    def eliminar_empleado(self, datos):
+        """
+        Elimina un empleado del sistema.
+
+        - Solicita confirmación al usuario
+        - Elimina el registro de la base de datos
+        - Retorna el ID eliminado para actualizar la tabla
+        """
+        # Confirmar la eliminación del empleado
+        empleado_eliminado = ventana_emergente.confirmar(
+            "Eliminar!",
+            f"¿Está seguro de eliminar al empleado {datos[1]}?"
+        )
+
+        print(datos)
+
+        # Si el usuario cancela la acción
+        if empleado_eliminado is False:
+            ventana_emergente.mostrar_error(
+                "No eliminado!",
+                f"El empleado {datos[1]} no fue eliminado!"
+            )
+            return None
+
+        # Eliminar el empleado de la base de datos
+        Cliente.eliminar_empleado(datos[0])
+
+        # Confirmación visual
+        ventana_emergente.mostrar_informacion(
+            "Empleado eliminado",
+            f"El empleado {datos[1]} fue eliminado exitosamente!"
+        )
+
+        # Refrescamos panel de gestion de empleados
+        self.gestionar_empleados()
+
+    # FUNCIONES ADMINISTRATIVAS
     #Crear backup
     def crear_backup(self):
         print("Crear backup")

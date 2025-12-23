@@ -287,3 +287,70 @@ class ventana_emergente:
 
         ventana.wait_window()
         return resultado["datos"]
+    
+    # ============================
+    #  EDITAR DATOS EMPLEADO
+    # ============================
+    @staticmethod
+    def editar_datos_empleado(datos_empleado):
+        if not datos_empleado:
+            return None
+
+        ventana = tk.Toplevel()
+        ventana.title("Editar Empleado")
+        ventana.geometry("350x300")
+        ventana.resizable(False, False)
+        ventana.grab_set()
+        ventana.focus()
+
+        resultado = {"datos": None}
+
+        # ========== NOMBRE ==========
+        tk.Label(ventana, text="Nombre:", font=("Arial", 11)).pack(pady=(10, 0))
+        entry_nombre = tk.Entry(ventana, width=30)
+        entry_nombre.pack(pady=5)
+        entry_nombre.insert(0, datos_empleado["nombre"])
+
+        # ========== TELÉFONO ==========
+        tk.Label(ventana, text="Teléfono:", font=("Arial", 11)).pack(pady=(10, 0))
+        entry_telefono = tk.Entry(ventana, width=30)
+        entry_telefono.pack(pady=5)
+        entry_telefono.insert(0, datos_empleado["telefono"])
+
+        # ========== NOTAS ==========
+        tk.Label(ventana, text="Notas / Dirección:", font=("Arial", 11)).pack(pady=(10, 0))
+        entry_notas = tk.Entry(ventana, width=30)
+        entry_notas.pack(pady=5)
+        entry_notas.insert(0, datos_empleado["notas"])
+
+        # ========== BOTONES ==========
+        frame_botones = tk.Frame(ventana)
+        frame_botones.pack(pady=20)
+
+        def guardar():
+            nombre = entry_nombre.get().strip()
+            telefono = entry_telefono.get().strip()
+            notas = entry_notas.get().strip()
+
+            if nombre == "":
+                messagebox.showerror("Error", "El nombre no puede estar vacío.")
+                return
+
+            resultado["datos"] = {
+                "id_cliente": datos_empleado["id_cliente"],
+                "nombre": nombre,
+                "telefono": telefono,
+                "notas": notas
+            }
+
+            ventana.destroy()
+
+        def cancelar():
+            ventana.destroy()
+
+        tk.Button(frame_botones, text="Guardar", width=12, command=guardar).pack(side="left", padx=10)
+        tk.Button(frame_botones, text="Cancelar", width=12, command=cancelar).pack(side="left", padx=10)
+
+        ventana.wait_window()
+        return resultado["datos"]
+

@@ -1,7 +1,11 @@
-# conexion.py
 import mysql.connector
 
+
 class conexion_bd:
+    """
+    Clase de conexión y ejecución de operaciones
+    sobre la base de datos MySQL.
+    """
 
     def __init__(self):
         self.host = 'localhost'
@@ -10,20 +14,13 @@ class conexion_bd:
         self.database = 'ybook'
         self.conn = None
         self.cursor = None
-    
-#--- Metodos de manejo de la base de datos ---
 
-    #Metodo para probar la conexion a la base de datos.
-    def probar_conexion(self):
-        try:
-            self.conectar()
-            print("Conexión exitosa a la base de datos.")
-            self.cerrar()
-        except Exception as e:
-            print(f"Error al conectar a la base de datos: {e}")
-    
-    #Metodo para conectar a la base de datos
+    # ============================
+    # CONEXIÓN
+    # ============================
+
     def conectar(self):
+        """Abre la conexión con la base de datos."""
         self.conn = mysql.connector.connect(
             host=self.host,
             user=self.user,
@@ -32,24 +29,50 @@ class conexion_bd:
         )
         self.cursor = self.conn.cursor(dictionary=True)
 
-    #Metodo para cerrar la conexion a la base de datos
     def cerrar(self):
+        """Cierra cursor y conexión."""
         if self.cursor:
             self.cursor.close()
         if self.conn:
             self.conn.close()
 
-    #Metodo para ejecutar un query (insert, update, delete)
-    def ejecutar(self, query, params=None):
-        self.conectar()
-        self.cursor.execute(query, params or ())
-        self.conn.commit()
-        self.cerrar()
+    # ============================
+    # CONSULTAS SELECT
+    # ============================
 
-    #Metodo para ejecutar un query de seleccion (select)
     def consultar(self, query, params=None):
-        self.conectar()
-        self.cursor.execute(query, params or ())
-        resultados = self.cursor.fetchall()
-        self.cerrar()
-        return resultados
+        """
+        Ejecuta una consulta SELECT.
+
+        Args:
+            query (str): Consulta SQL
+            params (tuple): Parámetros
+
+        Returns:
+            list[dict]: Resultados
+        """
+        try:
+            self.conectar()
+            self.cursor.execute(query, params or ())
+            return self.cursor.fetchall()
+        finally:
+            self.cerrar()
+
+    # ============================
+    # INSERT / UPDATE / DELETE
+    # ============================
+
+    def ejecutar(self, query, params=None):
+        """
+        Ejecuta una consulta INSERT, UPDATE o DELETE.
+
+        Args:
+            query (str): Consulta SQL
+            params (tuple): Parámetros
+        """
+        try:
+            self.conectar()
+            self.cursor.execute(query, params or ())
+            self.conn.commit()
+        finally:
+            self.cerrar()

@@ -2,9 +2,11 @@ from vista.ventana import Ventana
 from vista.ventana_emergente import ventana_emergente
 
 from modelo.cliente import Cliente
+from modelo.filtros import Filtros
 from modelo.transaccion import Transaccion
 from modelo.datos_configuracion import DatosConfiguracion
-from modelo.filtros import Filtros
+from modelo.gestion_archivos import gestion_archivos
+from modelo.enviador_mensajes import enviador_mensajes
 
 from datetime import datetime
 
@@ -194,7 +196,7 @@ class Controller:
             self.ventana.set_panel_administrador(
                 on_regresar=self.regresar_inicio,
                 on_empleados=self.gestionar_empleados,
-                on_backup=self.crear_backup,
+                on_backup=self.cargar_backup,
                 on_importar_excel=self.importar_excel,
                 on_cambiar_contraseña=self.cambiar_contraseña_admin,
                 on_estadisticas=self.ver_estadisticas
@@ -549,7 +551,7 @@ class Controller:
             return None
 
         # Guardar el nuevo empleado en la base de datos
-        nuevo_id = Cliente.agregar(
+        Cliente.agregar(
             nombre=datos_empleado["nombre"],
             telefono=datos_empleado["telefono"],
             notas=datos_empleado["notas"],
@@ -648,10 +650,174 @@ class Controller:
         # Refrescamos panel de gestion de empleados
         self.gestionar_empleados()
 
-    # FUNCIONES ADMINISTRATIVAS
-    #Crear backup
-    def crear_backup(self):
-        print("Crear backup")
+    # Crear backup
+    def cargar_backup(self):
+        """
+        Carga el panel de administración de backups del sistema.
+
+        RESPONSABILIDAD:
+        -----------------
+        - Obtener el correo de destino configurado para los backups
+        - Validar que dicho correo exista
+        - Inicializar el panel de backups inyectando los callbacks necesarios
+
+        FLUJO:
+        ------
+        1. Consulta en la base de datos el correo de destino para backups
+        2. Si no existe un correo configurado, muestra un error y detiene el flujo
+        3. Si existe, carga el panel de backups pasando:
+           - Correo actual
+           - Callback para cambiar correo
+           - Callback para generar backup
+           - Callback para regresar al panel anterior
+
+        NOTAS:
+        ------
+        - Este método NO genera backups
+        - Solo orquesta la navegación y validaciones previas
+        - La vista no accede a la base de datos
+        """
+
+        correo_backup = DatosConfiguracion.obtener_correo_backup()
+
+        if not correo_backup:
+            ventana_emergente.mostrar_error(
+                "Error!",
+                "No se ha configurado un correo de destino para los backups."
+            )
+            return
+
+        self.ventana.set_panel_administrador_backup(
+            correo_backup,
+            self.cambiar_correo_backup,
+            self.generar_backup,
+            self.regresar_inicio
+        )
+
+
+    #Metodo para cambiar correo de backup
+    def cambiar_correo_backup(self):
+        """
+        Permite cambiar el correo de destino donde se enviarán los backups.
+
+        RESPONSABILIDAD:
+        -----------------
+        - Solicitar al usuario un nuevo correo de destino
+        - Validar que se haya ingresado información
+        - Actualizar el correo en la base de datos
+        - Notificar el resultado al usuario
+
+        FLUJO:
+        ------
+        1. Solicita al usuario el nuevo correo mediante una ventana emergente
+        2. Si el usuario cancela o no ingresa datos, muestra un error
+        3. Si el correo es válido:
+           - Se guarda en la base de datos
+           - Se muestra un mensaje de éxito
+
+        NOTAS:
+        ------
+        - El correo se guarda en BD, no en el .env
+        - Permite modificar el destino sin reiniciar la aplicación
+        """
+        nuevo_correo = ventana_emergente.pedir_texto("Cambiar correo de backup", "Ingrese el nuevo correo destino para los backups:")
+
+        if not nuevo_correo:
+            ventana_emergente.mostrar_error("Error!", "Debe ingresar un correo válido.")
+            return 
+
+        DatosConfiguracion.cambiar_correo_backup(nuevo_correo)
+        ventana_emergente.mostrar_informacion("Éxito!", "Correo de backup actualizado correctamente.")
+
+    #Metodo para generar backup
+    def generar_backup(self, fecha_inicio, fecha_fin):
+        """
+        Genera un backup intencional del sistema y lo envía por correo electrónico.
+
+        RESPONSABILIDAD:
+        -----------------
+        - Generar archivos Excel con información del sistema
+        - Construir el mensaje HTML del correo
+        - Enviar el correo con los archivos adjuntos
+        - Notificar al usuario el resultado del proceso
+
+        PARÁMETROS:
+        -----------
+        fecha_inicio (str | date):
+            Fecha inicial del rango de transacciones a respaldar
+
+        fecha_fin (str | date):
+            Fecha final del rango de transacciones a respaldar
+
+        FLUJO:
+        ------
+        1. Genera un Excel con las transacciones entre las fechas indicadas
+        2. Genera un Excel con el listado completo de clientes
+        3. Construye un correo en formato HTML con la información del backup
+        4. Obtiene el correo de destino desde la base de datos
+        5. Envía el correo con ambos archivos adjuntos
+        6. Muestra confirmación visual al usuario
+
+        NOTAS:
+        ------
+        - Este backup es MANUAL (iniciado desde el panel)
+        - Es independiente del backup automático diario
+        - Los archivos se generan dinámicamente según el rango elegido
+        """
+        #Generar excel con las fechas acordadas de transacciones
+        gt = gestion_archivos()
+        ruta_transacciones = gt.guardar_datos_transacciones_excel_por_fecha(fecha_inicio, fecha_fin)
+
+        #Generar excel con todos los clientes
+        ruta_clientes = gt.guardar_datos_clientes_excel()
+
+        #Enviar correo con los archivos adjuntos
+        mensaje_enviado = f"""
+            <!DOCTYPE html>
+            <html lang="es">
+            <head>
+              <meta charset="UTF-8">
+            </head>
+            <body style="font-family: Arial; background-color: #f4f6f8; padding: 20px;">
+              <div style="max-width:600px; background:#ffffff; margin:auto; border-radius:8px;">
+                
+                <div style="background:#2c3e50; color:white; padding:20px; text-align:center;">
+                  <h2>📦 Backup del Sistema GYIE</h2>
+                </div>
+
+                <div style="padding:20px; color:#333;">
+                  <p>Se ha generado correctamente un respaldo del sistema.</p>
+
+                  <p><strong>📅 Rango de fechas:</strong></p>
+                  <ul>
+                    <li>Desde: <strong>{fecha_inicio}</strong></li>
+                    <li>Hasta: <strong>{fecha_fin}</strong></li>
+                  </ul>
+
+                  <p>Archivos adjuntos:</p>
+                  <ul>
+                    <li>📊 Transacciones del período</li>
+                    <li>👥 Listado completo de clientes</li>
+                  </ul>
+
+                  <p>Guarde estos archivos en un lugar seguro.</p>
+                </div>
+
+                <div style="background:#ecf0f1; text-align:center; padding:10px; font-size:12px;">
+                  © {datetime.now().year} Yalejo · Sistema GYIE<br>
+                  Este correo fue generado automáticamente.
+                </div>
+
+              </div>
+            </body>
+            </html>
+            """
+
+        #Enviar correo
+        correo_destino = DatosConfiguracion.obtener_correo_backup()
+        enviador_mensajes.enviar_mensaje_html_con_archivos(correo_destino, "📦 Backup intencional del sistema GYIE", mensaje_enviado, [ruta_transacciones, ruta_clientes])
+
+        ventana_emergente.mostrar_informacion("Éxito!", f"Backup enviado correctamente al correo {correo_destino}.")   
 
     #Importar desde excel
     def importar_excel(self):

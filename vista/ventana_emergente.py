@@ -28,6 +28,10 @@ class ventana_emergente:
     @staticmethod
     def confirmar(titulo, mensaje):
         return messagebox.askyesno(titulo, mensaje)
+    
+    @staticmethod
+    def pedir_texto(titulo, mensaje):
+        return simpledialog.askstring(titulo, mensaje)
 
     @staticmethod
     def pedir_contraseña(titulo, mensaje):

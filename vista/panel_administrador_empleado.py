@@ -11,13 +11,13 @@ class panel_administrador_empleado(tk.Frame):
     Esta clase representa ÚNICAMENTE la VISTA (GUI) del módulo
     de gestión de empleados.
 
-    ❌ No accede a la base de datos
-    ❌ No mantiene estado interno
-    ❌ No actualiza listas
-    ❌ No refresca datos por su cuenta
+    No accede a la base de datos
+    No mantiene estado interno
+    No actualiza listas
+    No refresca datos por su cuenta
 
-    ✅ Muestra información recibida
-    ✅ Dispara eventos al controlador (callbacks)
+    Muestra información recibida
+    Dispara eventos al controlador (callbacks)
     """
 
     def __init__(

@@ -44,3 +44,8 @@ CREATE TABLE datos_configuracion (
     valor TEXT NOT NULL
 );
 
+INSERT INTO `datos_configuracion` (`id`, `nombre_config`, `valor`) VALUES
+(1, 'clave_admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9');
+
+INSERT INTO datos_configuracion (nombre_config, valor)
+VALUES ('correo_backup_destino', 'notificaciones.yalejo@gmail.com');

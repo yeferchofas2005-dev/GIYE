@@ -4,7 +4,7 @@ from vista.panel_inicio import panel_inicio
 from vista.panel_dashboard import panel_dashboard
 from vista.panel_administrador import panel_administrador
 from vista.panel_administrador_empleado import panel_administrador_empleado
-
+from vista.panel_administrador_backup import panel_administrador_backup
 
 class Ventana(tk.Tk):
     """
@@ -230,6 +230,40 @@ class Ventana(tk.Tk):
             on_agregar=on_agregar,
             on_editar=on_editar,
             on_eliminar=on_eliminar,
+            on_regresar=on_regresar
+        )
+
+        self._cambiar_panel(panel)
+
+    # ==============================
+    # PANEL ADMINISTRADOR - EMPLEADOS
+    # ==============================
+    def set_panel_administrador_backup(
+        self,
+        correo_backup,
+        on_cambiar_correo,
+        on_generar_backup,
+        on_regresar
+    ):
+        """
+        Carga el panel de administración de backups.
+
+        Permite gestionar:
+        - Correo destino de los backups
+        - Generación de nuevos backups
+        - Restauración desde backups
+
+        Args:
+            correo_backup (str): Correo destino actual de los backups
+            on_cambiar_correo (callable): Cambiar correo destino
+            on_generar_backup (callable): Generar nuevo backup
+            on_regresar (callable): Volver al panel administrador
+        """
+        panel = panel_administrador_backup(
+            self.contenedor,
+            correo_backup=correo_backup,
+            on_cambiar_correo=on_cambiar_correo,
+            on_generar_backup=on_generar_backup,
             on_regresar=on_regresar
         )
 

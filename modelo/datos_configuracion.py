@@ -33,3 +33,22 @@ class DatosConfiguracion:
 
         # Comparar hashes
         return hash_guardado == hash_ingresado
+    
+    @staticmethod
+    def obtener_correo_backup():
+        db = conexion_bd()
+
+        query = "SELECT valor FROM datos_configuracion WHERE nombre_config = 'correo_backup_destino'"
+        resultados = db.consultar(query)
+
+        if not resultados:
+            return None
+
+        return resultados[0]["valor"]
+
+    @staticmethod
+    def cambiar_correo_backup(correo):
+        db = conexion_bd()
+
+        query = "UPDATE datos_configuracion SET valor = %s WHERE nombre_config = 'correo_backup_destino'"
+        db.ejecutar(query, (correo,))

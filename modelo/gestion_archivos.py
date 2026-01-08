@@ -160,3 +160,96 @@ class gestion_archivos:
         df.to_excel(ruta, index=False)
 
         return ruta
+
+    def importar_clientes(self, ruta_excel):
+        """
+        Importa clientes desde un archivo Excel usando id_cliente como
+        criterio de duplicidad.
+
+        RESPONSABILIDAD:
+        -----------------
+        - Insertar solo clientes cuyo id_cliente NO exista en la BD
+        - Ignorar automáticamente los duplicados por PRIMARY KEY
+
+        PARÁMETROS:
+        -----------
+        ruta_excel (str):
+            Ruta del archivo Excel
+
+        """
+
+        df = pd.read_excel(ruta_excel)
+
+        db = conexion_bd()
+
+        query = """
+        INSERT IGNORE INTO clientes (id_cliente, nombre, telefono, notas, empleado)
+        VALUES (%s, %s, %s, %s, %s)
+        """
+
+        for _, fila in df.iterrows():
+            db.ejecutar(query, (
+                int(fila["id_cliente"]),
+                fila["nombre"],
+                fila["telefono"],
+                fila.get("notas"),
+                fila.get("empleado")
+            ))
+    
+    def importar_transacciones(self, ruta_excel):
+        """
+        Importa transacciones desde un archivo Excel usando id_transaccion
+        como criterio de duplicidad.
+
+        RESPONSABILIDAD:
+        -----------------
+        - Insertar solo transacciones cuyo id_transaccion NO exista en la BD
+        - Ignorar automáticamente los duplicados por PRIMARY KEY
+
+        PARÁMETROS:
+        -----------
+        ruta_excel (str):
+            Ruta del archivo Excel
+
+        """
+
+        df = pd.read_excel(ruta_excel)
+
+        db = conexion_bd()
+
+        query = """
+        INSERT IGNORE INTO transacciones (
+            id_transaccion,
+            fecha_creacion,
+            tipo_transaccion,
+            subtipo_transaccion,
+            monto,
+            id_cliente,
+            descripcion,
+            referencia_original,
+            saldo_afectado,
+            estado_deuda,
+            id_empleado
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+
+        for _, fila in df.iterrows():
+            def limpiar(valor):
+                return None if pd.isna(valor) else valor
+
+            db.ejecutar(query, (
+                int(fila["id_transaccion"]),
+                limpiar(fila["fecha_creacion"]),
+                limpiar(fila["tipo_transaccion"]),
+                limpiar(fila["subtipo_transaccion"]),
+                float(fila["monto"]),
+                int(fila["id_cliente"]),
+                limpiar(fila["descripcion"]),
+                limpiar(fila["referencia_original"]),
+                limpiar(fila["saldo_afectado"]),
+                limpiar(fila["estado_deuda"]),
+                limpiar(fila["id_empleado"])
+            ))
+
+

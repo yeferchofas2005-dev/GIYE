@@ -1,3 +1,5 @@
+import os
+
 from vista.ventana import Ventana
 from vista.ventana_emergente import ventana_emergente
 
@@ -821,12 +823,106 @@ class Controller:
 
     #Importar desde excel
     def importar_excel(self):
-        print("Importar desde excel")
+        """
+        Importa información al sistema desde un archivo Excel seleccionado por el usuario.
+
+        RESPONSABILIDAD:
+        -----------------
+        - Solicitar al usuario la selección de un archivo Excel
+        - Validar que el archivo seleccionado sea un backup válido
+        - Determinar el tipo de información a importar (clientes o transacciones)
+        - Ejecutar la lógica de importación correspondiente
+        - Notificar al usuario el resultado del proceso
+
+        PARÁMETROS:
+        -----------
+        Ninguno
+
+        FLUJO:
+        ------
+        1. Abre un selector de archivos para elegir un Excel
+        2. Valida que el archivo seleccionado exista y sea válido
+        3. Identifica el tipo de backup según el nombre del archivo
+        4. Importa los datos faltantes en la base de datos
+        5. Muestra un mensaje de éxito o error según el resultado
+
+        NOTAS:
+        ------
+        - Solo se aceptan archivos generados por el sistema
+        - No sobrescribe registros existentes, solo importa faltantes
+        - Los archivos válidos son:
+          * clientes.xlsx
+          * transacciones_por_fecha_*.xlsx
+        """
+        ruta = ventana_emergente.seleccionar_archivo()
+
+        if not ruta:
+            ventana_emergente.mostrar_error("Error!", "Debe seleccionar un archivo Excel válido.")
+            return
+        
+        nombre_archivo = os.path.basename(ruta)
+
+        if nombre_archivo == "clientes.xlsx":
+            #Logica de importacion de backup cliente
+            gt = gestion_archivos()
+            gt.importar_clientes(ruta)
+            ventana_emergente.mostrar_informacion("Éxito!", "Se importaron con exito todos los registros faltantes de clientes.")
+        elif nombre_archivo.startswith("transacciones_por_fecha") and nombre_archivo.endswith(".xlsx"):
+            #Logica de importacion de backup transacciones
+            gt = gestion_archivos()
+            gt.importar_transacciones(ruta)
+            ventana_emergente.mostrar_informacion("Éxito!", "Se importaron con exito todos los registros faltantes de transacciones.")
+        else:
+            ventana_emergente.mostrar_error("Error!", "El archivo seleccionado no es un backup válido.")
+            return
 
     #Cambiar contraseña admin
     def cambiar_contraseña_admin(self):
-        print("Cambiar contraseña admin")
+        """
+        Permite cambiar la contraseña del administrador del sistema.
 
+        RESPONSABILIDAD:
+        -----------------
+        - Solicitar la nueva contraseña de administrador
+        - Solicitar confirmación de la contraseña ingresada
+        - Validar que ambas contraseñas coincidan
+        - Actualizar la contraseña en la base de datos
+        - Informar al usuario el resultado de la operación
+
+        PARÁMETROS:
+        -----------
+        Ninguno
+
+        FLUJO:
+        ------
+        1. Solicita al usuario la nueva contraseña
+        2. Solicita la confirmación de la contraseña
+        3. Valida que ambas contraseñas sean iguales
+        4. Guarda la nueva contraseña en la base de datos
+        5. Muestra un mensaje de éxito o error
+
+        NOTAS:
+        ------
+        - La contraseña se almacena a través de la configuración del sistema
+        - La operación es manual y solo accesible desde el panel de administración
+        - Si las contraseñas no coinciden, el proceso se cancela
+        """
+        contraseña_nueva = ventana_emergente.pedir_contraseña("Cambiar Contraseña de Administrador", "Ingrese la nueva contraseña de administrador:")
+
+        confirmacion_contraseña_nueva = ventana_emergente.pedir_contraseña("Confirmar Contraseña", "Confirme la nueva contraseña de administrador:")
+
+        if not contraseña_nueva or not confirmacion_contraseña_nueva:
+            ventana_emergente.mostrar_error("Error!", "Debe ingresar y confirmar la nueva contraseña.")
+            return
+        
+        if contraseña_nueva == confirmacion_contraseña_nueva:
+            DatosConfiguracion.cambiar_contraseña(contraseña_nueva)
+
+            ventana_emergente.mostrar_informacion("Éxito!", "Contraseña de administrador cambiada correctamente.")  
+        else:
+            ventana_emergente.mostrar_error("Error!", "Las contraseñas no coinciden. Intente nuevamente.")
+            return
+        
     #Ver estadísticas
     def ver_estadisticas(self):
         print("Ver estadísticas")

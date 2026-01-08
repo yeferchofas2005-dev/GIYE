@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import messagebox, simpledialog, ttk, filedialog
 
 from modelo.cliente import Cliente 
 
@@ -61,6 +61,32 @@ class ventana_emergente:
 
         btn = tk.Button(ventana, text="Cerrar", command=ventana.destroy)
         btn.pack(pady=(0, 10))
+
+    
+    @staticmethod
+    def seleccionar_archivo(titulo="Seleccionar archivo", tipos_archivo=None):
+        """
+        Muestra un diálogo para seleccionar un archivo del sistema.
+
+        Args:
+            titulo (str): Título de la ventana.
+            tipos_archivo (list): Lista de tuplas con tipos de archivo.
+                Ejemplo:
+                [("Archivos Excel", "*.xlsx"), ("Todos", "*.*")]
+
+        Returns:
+            str | None: Ruta completa del archivo seleccionado o None si se cancela.
+        """
+
+        ruta = filedialog.askopenfilename(
+            title=titulo,
+            filetypes=tipos_archivo if tipos_archivo else [("Todos los archivos", "*.*")]
+        )
+
+        if not ruta:
+            return None
+
+        return ruta
 
 
     # ============================

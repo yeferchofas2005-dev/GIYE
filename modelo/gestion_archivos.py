@@ -1,6 +1,6 @@
 import pandas as pd
 from modelo.conexion import conexion_bd
-
+from datetime import datetime, time
 
 class gestion_archivos:
     """
@@ -149,12 +149,16 @@ class gestion_archivos:
 
         ruta = f"Data/transacciones_por_fecha_{fecha_inicio}_{fecha_fin}.xlsx"
 
+        # Ajustar fechas para cubrir TODO el día
+        fecha_inicio_dt = datetime.combine(fecha_inicio, time.min)
+        fecha_fin_dt = datetime.combine(fecha_fin, time.max)
+
         db = conexion_bd()
         query = """
         SELECT * FROM transacciones
         WHERE fecha_creacion BETWEEN %s AND %s
         """
-        transacciones = db.consultar(query, (fecha_inicio, fecha_fin))
+        transacciones = db.consultar(query, (fecha_inicio_dt, fecha_fin_dt))
 
         df = pd.DataFrame(transacciones)
         df.to_excel(ruta, index=False)

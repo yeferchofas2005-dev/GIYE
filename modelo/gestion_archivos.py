@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 from modelo.conexion import conexion_bd
 from datetime import datetime, time
 
@@ -60,7 +61,7 @@ class gestion_archivos:
         - El Excel no incluye índices del DataFrame
         """
 
-        ruta = "Data/clientes.xlsx"
+        ruta = os.path.join(os.getenv("BACKUP_DIR"), "clientes.xlsx")
 
         bd = conexion_bd()
         usuarios = bd.consultar("SELECT * FROM clientes")
@@ -81,7 +82,7 @@ class gestion_archivos:
         - Retornar la ruta del archivo generado
 
         RETORNA:
-        --------
+        --------    
         str:
             Ruta del archivo Excel generado (transacciones.xlsx)
 
@@ -99,7 +100,7 @@ class gestion_archivos:
         - El archivo se genera completo sin filtros
         """
 
-        ruta = "Data/transacciones.xlsx"
+        ruta = os.path.join(os.getenv("BACKUP_DIR"), "transacciones.xlsx")
 
         bd = conexion_bd()
         transacciones = bd.consultar("SELECT * FROM transacciones")
@@ -146,8 +147,8 @@ class gestion_archivos:
         - Ideal para backups manuales por período
         - Se asume que las fechas son válidas y compatibles con la BD
         """
-
-        ruta = f"Data/transacciones_por_fecha_{fecha_inicio}_{fecha_fin}.xlsx"
+        
+        ruta = os.path.join(os.getenv("BACKUP_DIR"), f"transacciones_por_fecha_{fecha_inicio}_{fecha_fin}.xlsx")
 
         # Ajustar fechas para cubrir TODO el día
         fecha_inicio_dt = datetime.combine(fecha_inicio, time.min)

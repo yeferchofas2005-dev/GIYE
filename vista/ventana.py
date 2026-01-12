@@ -5,6 +5,7 @@ from vista.panel_dashboard import panel_dashboard
 from vista.panel_administrador import panel_administrador
 from vista.panel_administrador_empleado import panel_administrador_empleado
 from vista.panel_administrador_backup import panel_administrador_backup
+from vista.panel_administrador_estadisticas import panel_administrador_estadisticas
 
 class Ventana(tk.Tk):
     """
@@ -236,7 +237,7 @@ class Ventana(tk.Tk):
         self._cambiar_panel(panel)
 
     # ==============================
-    # PANEL ADMINISTRADOR - EMPLEADOS
+    # PANEL ADMINISTRADOR - BACKUP
     # ==============================
     def set_panel_administrador_backup(
         self,
@@ -264,6 +265,28 @@ class Ventana(tk.Tk):
             correo_backup=correo_backup,
             on_cambiar_correo=on_cambiar_correo,
             on_generar_backup=on_generar_backup,
+            on_regresar=on_regresar
+        )
+
+        self._cambiar_panel(panel)
+
+    # ==============================
+    # PANEL ADMINISTRADOR - ESTADÍSTICAS
+    # ==============================
+    def set_panel_administrador_estadisticas(
+        self,
+        clientes_mayor_deuda,
+        deuda_vs_abono,
+        deudas_antiguas,
+        transacciones_por_mes,
+        on_regresar
+    ):
+        panel = panel_administrador_estadisticas(
+            self.contenedor,
+            clientes_mayor_deuda=clientes_mayor_deuda,
+            deuda_vs_abono=deuda_vs_abono,
+            deudas_antiguas=deudas_antiguas,
+            transacciones_por_mes=transacciones_por_mes,
             on_regresar=on_regresar
         )
 

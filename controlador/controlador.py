@@ -9,17 +9,146 @@ from modelo.transaccion import Transaccion
 from modelo.datos_configuracion import DatosConfiguracion
 from modelo.gestion_archivos import gestion_archivos
 from modelo.enviador_mensajes import enviador_mensajes
+from modelo.datos_graficas import datos_graficas
 
 from datetime import datetime
 
 
 class Controller:
     """
-    Controlador principal de la aplicación (patrón MVC).
-    - Coordina la vista (Ventana y paneles) con los modelos (Cliente, Transaccion, etc.)
-    - Contiene la lógica de interacción de alto nivel (login, registrar transacciones, filtros, etc.)
-    - NO realiza operaciones de UI directamente (las delega a ventana_emergente / Ventana).
+    Controlador principal del sistema GYIE, implementado bajo el patrón
+    Modelo – Vista – Controlador (MVC).
+
+    FUNCIÓN GENERAL:
+    ----------------
+    Este controlador actúa como el núcleo de coordinación de la aplicación.
+    Su responsabilidad principal es orquestar la comunicación entre:
+
+    - La capa de presentación (Vista)
+    - La capa de lógica y persistencia (Modelos)
+    - Las acciones del usuario (eventos, botones, formularios)
+
+    El Controller NO contiene lógica de interfaz gráfica ni lógica de acceso
+    directo a la base de datos. Su función es decidir:
+    - QUÉ datos se solicitan
+    - CUÁNDO se solicitan
+    - A QUÉ vista se envían
+    - QUÉ acción ejecutar ante una interacción del usuario
+
+    ------------------------------------------------------------
+    RESPONSABILIDADES PRINCIPALES:
+    ------------------------------------------------------------
+
+    1. GESTIÓN DE NAVEGACIÓN
+       ---------------------
+       - Controla el flujo entre paneles:
+         * Inicio
+         * Dashboard
+         * Panel administrador
+         * Panel de empleados
+         * Panel de estadísticas
+         * Panel de backups
+       - Decide cuándo cambiar de vista y con qué información hacerlo
+
+    2. COORDINACIÓN DEL DASHBOARD
+       ---------------------------
+       - Carga y transforma las transacciones para visualización
+       - Calcula totales de deuda y abonos
+       - Formatea la información para que la vista no procese datos
+       - Responde a acciones del dashboard:
+         * Registrar deudas
+         * Registrar abonos
+         * Aplicar filtros
+         * Tachado de deudas
+         * Visualización de detalles
+
+    3. AUTENTICACIÓN Y CONTROL DE ACCESO
+       ---------------------------------
+       - Gestiona login de administrador y empleados
+       - Mantiene el estado de sesión del empleado en turno
+       - Protege acciones sensibles (tachado de deudas de empleados,
+         cambios de configuración, backups, etc.)
+
+    4. GESTIÓN DE TRANSACCIONES
+       ------------------------
+       - Registra nuevas deudas y abonos
+       - Asocia transacciones a clientes y empleados
+       - Controla estados de deuda (PENDIENTE, CANCELADA)
+       - Garantiza consistencia antes de escribir en base de datos
+
+    5. GESTIÓN DE CLIENTES Y EMPLEADOS
+       --------------------------------
+       - Alta, edición y eliminación de clientes
+       - Gestión completa de empleados desde el panel administrador
+       - Sincroniza cambios con la vista tras cada operación
+
+    6. FILTRADO Y ORDENAMIENTO DE INFORMACIÓN
+       --------------------------------------
+       - Aplica filtros combinados:
+         * Fecha
+         * Nombre de cliente
+         * Estado de deuda
+         * Orden por monto
+       - Delega consultas especializadas al modelo `Filtros`
+       - Re-renderiza el dashboard con resultados filtrados
+
+    7. GESTIÓN DE ESTADÍSTICAS
+       -----------------------
+       - Obtiene datos estadísticos agregados desde `datos_graficas`
+       - Envía información lista para graficar a la vista
+       - No genera gráficos, solo coordina datos y navegación
+
+    8. BACKUPS E IMPORTACIÓN DE DATOS
+       ------------------------------
+       - Coordina la generación de backups manuales
+       - Gestiona exportación a Excel
+       - Orquesta el envío de correos con adjuntos
+       - Controla la importación segura de datos desde backups válidos
+
+    9. CONFIGURACIÓN DEL SISTEMA
+       -------------------------
+       - Cambio de contraseña de administrador
+       - Gestión del correo de destino de backups
+       - Centraliza configuraciones críticas del sistema
+
+    ------------------------------------------------------------
+    PRINCIPIOS DE DISEÑO APLICADOS:
+    ------------------------------------------------------------
+
+    - Patrón MVC estricto
+    - Separación de responsabilidades
+    - Bajo acoplamiento entre capas
+    - Alta cohesión de responsabilidades
+    - Controlador como orquestador, no como procesador
+
+    ------------------------------------------------------------
+    RELACIÓN CON OTRAS CAPAS:
+    ------------------------------------------------------------
+
+    MODELOS:
+    - Cliente
+    - Transaccion
+    - Filtros
+    - DatosConfiguracion
+    - datos_graficas
+    - gestion_archivos
+    - enviador_mensajes
+
+    VISTAS:
+    - Ventana principal
+    - Paneles administrativos
+    - Ventanas emergentes (input / confirmación / alertas)
+
+    ------------------------------------------------------------
+    NOTA FINAL:
+    ------------------------------------------------------------
+    Este controlador está diseñado para ser:
+    - Escalable
+    - Mantenible
+    - Fácil de extender (nuevos reportes, paneles o reglas)
+    sin necesidad de modificar la lógica existente.
     """
+
 
     def __init__(self):
         """
@@ -923,6 +1052,49 @@ class Controller:
             ventana_emergente.mostrar_error("Error!", "Las contraseñas no coinciden. Intente nuevamente.")
             return
         
-    #Ver estadísticas
+    # Ver estadísticas del sistema
     def ver_estadisticas(self):
-        print("Ver estadísticas")
+        """
+        Muestra el panel de estadísticas del sistema.
+
+        RESPONSABILIDAD:
+        -----------------
+        - Obtener la información estadística desde la capa de datos
+        - Enviar los datos necesarios a la vista de estadísticas
+        - Cambiar el panel actual por el panel de estadísticas
+        - Definir la acción para regresar al panel principal
+
+        PARÁMETROS:
+        -----------
+        Ninguno
+
+        FUENTES DE DATOS:
+        -----------------
+        - clientes_mayor_deuda: Clientes con mayor monto de deuda
+        - deuda_vs_abono: Total acumulado de deudas frente a abonos
+        - deudas_antiguas: Listado de las deudas más antiguas
+        - transacciones_por_mes: Resumen mensual de deudas y abonos
+
+        FLUJO:
+        ------
+        1. Solicita a la capa de datos la información estadística necesaria
+        2. Envía los datos al panel de estadísticas
+        3. Cambia la vista actual a la vista de estadísticas
+        4. Define el método de regreso al panel principal
+
+        NOTAS:
+        ------
+        - Este método NO procesa datos, solo los coordina
+        - Sigue el patrón MVC:
+          * Modelo: datos_graficas
+          * Vista: panel_administrador_estadisticas
+          * Controlador: este método
+        - Todas las consultas se realizan antes de mostrar la vista
+        """
+        self.ventana.set_panel_administrador_estadisticas(
+            clientes_mayor_deuda=datos_graficas.obtener_clientes_con_mayor_deuda(),
+            deuda_vs_abono=datos_graficas.obtener_total_deudas_y_abonos(),
+            deudas_antiguas=datos_graficas.obtener_lista_deudas_mas_antiguas(),
+            transacciones_por_mes=datos_graficas.obtener_transacciones_por_mes(),
+            on_regresar=self.regresar_inicio
+        )

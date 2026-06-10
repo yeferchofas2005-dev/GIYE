@@ -5,14 +5,26 @@ from tkcalendar import DateEntry
 
 class panel_dashboard(tk.Frame):
 
-    def __init__(self, master, datos_tabla, total_deuda, total_abono,
-                 on_nuevo_abono, on_nueva_deuda, on_filtrar, on_tachar, on_regresar):
+    def __init__(
+            self,
+            master,
+            datos_tabla,
+            total_deuda,
+            total_abono,
+            total_nequi,
+            on_nuevo_abono,
+            on_nueva_deuda,
+            on_filtrar,
+            on_tachar,
+            on_regresar
+    ):
 
         super().__init__(master, bg="#0b4fa8")
 
         self.datos_tabla = datos_tabla
         self.total_deuda = total_deuda
         self.total_abono = total_abono
+        self.total_nequi = total_nequi
         self.on_filtrar_callback = on_filtrar
         self.on_tachar = on_tachar
         self.on_regresar = on_regresar
@@ -187,9 +199,26 @@ class panel_dashboard(tk.Frame):
 
         self.tabla.pack(fill="both", expand=True)
 
-        self.tabla.tag_configure("deuda", background="#e63946")
-        self.tabla.tag_configure("abono", background="#2ecc71")
-        self.tabla.tag_configure("tachado", foreground="gray", font=("Arial", 11, "overstrike"))
+        self.tabla.tag_configure(
+            "deuda",
+            background="#ffd6d6"
+        )
+
+        self.tabla.tag_configure(
+            "abono",
+            background="#d6ffd6"
+        )
+
+        self.tabla.tag_configure(
+            "tachado",
+            foreground="gray",
+            font=("Arial", 11, "overstrike")
+        )
+
+        self.tabla.tag_configure(
+            "nequi",
+            background="#d8b4fe"  # morado suave estilo Nequi
+        )
 
         # ==============================
         # PARTE INFERIOR (TOTALES)
@@ -205,7 +234,7 @@ class panel_dashboard(tk.Frame):
             fg="white",
             font=("Arial", 14, "bold")
         )
-        self.lbl_total_deuda.pack(side="left")
+        self.lbl_total_deuda.pack(side="left", padx=5)
 
         self.lbl_total_abono = tk.Label(
             pie,
@@ -214,9 +243,18 @@ class panel_dashboard(tk.Frame):
             fg="white",
             font=("Arial", 14, "bold")
         )
-        self.lbl_total_abono.pack(side="right")
+        self.lbl_total_abono.pack(side="left", padx=30)
 
-        self.tabla.column("ID", width=0, stretch=False)
+        self.lbl_total_nequi = tk.Label(
+            pie,
+            text="Total Nequi: $0",
+            bg="#0b4fa8",
+            fg="#d8b4fe",
+            font=("Arial", 14, "bold")
+        )
+        self.lbl_total_nequi.pack(side="right", padx=10)
+
+        self.tabla.column("ID", width=70, anchor="center")
 
         self.tabla.bind("<ButtonRelease-1>", self._on_row_click)
         
@@ -244,9 +282,33 @@ class panel_dashboard(tk.Frame):
             # soportar ambos formatos: (id,nombre,debe,abono,fecha,accion)  o
             # (id,nombre,debe,abono,fecha,accion,estado_deuda)
             estado = None
-            if len(fila) == 7:
-                id_transaccion, nombre, debe, abono, fecha, accion, estado = fila
-                valores_insert = fila[:6]   # Treeview tiene 6 columnas: dejamos solo las 6 primeras
+            if len(fila) == 8:
+                (
+                    id_transaccion,
+                    nombre,
+                    debe,
+                    abono,
+                    fecha,
+                    accion,
+                    estado,
+                    subtipo
+                ) = fila
+
+                valores_insert = fila
+            elif len(fila) == 7:
+
+                (
+                    id_transaccion,
+                    nombre,
+                    debe,
+                    abono,
+                    fecha,
+                    accion,
+                    estado
+                ) = fila
+
+                subtipo = None
+                valores_insert = fila
             else:
                 id_transaccion, nombre, debe, abono, fecha, accion = fila
                 valores_insert = fila
@@ -264,10 +326,16 @@ class panel_dashboard(tk.Frame):
             # determinar tag base por tipo (deuda/abono)
             if estado == "CANCELADA":
                 tag = "tachado"
+
+            elif subtipo == "NEQUI_PENDIENTE":
+                tag = "nequi"
+
             elif debe_val > 0:
                 tag = "deuda"
+
             elif abono_val > 0:
                 tag = "abono"
+
             else:
                 tag = ""
 
@@ -279,7 +347,9 @@ class panel_dashboard(tk.Frame):
 
         # actualizar totales en la UI
         self.lbl_total_deuda.config(text=f"Total Deuda: ${self.total_deuda}")
-        self.lbl_total_abono.config(text=f"Total Abono: ${self.total_abono}")
+        self.lbl_total_abono.config(text=f"Total Caja: ${self.total_abono}")
+        self.lbl_total_nequi.config(text=f"Total Nequi: ${self.total_nequi}")
+
 
     # ==============================
     # APLICAR FILTROS
@@ -332,4 +402,17 @@ class panel_dashboard(tk.Frame):
 
         # Valores = (ID, NombreCliente, Debe, Abono, Fecha, "Ver")
         if self.master.on_click_transaccion:
-            self.master.on_click_transaccion(valores)
+
+            id_transaccion = valores[0]
+
+            fila_completa = next(
+                (
+                    fila
+                    for fila in self.datos_tabla
+                    if str(fila[0]) == str(id_transaccion)
+                ),
+                None
+            )
+
+            if fila_completa:
+                self.master.on_click_transaccion(fila_completa)

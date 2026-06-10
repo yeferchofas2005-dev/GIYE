@@ -102,7 +102,7 @@ class datos_graficas:
 
         query = """
             SELECT
-                DATE_FORMAT(fecha_creacion, '%Y-%m') AS mes,
+                DATE_FORMAT(fecha_creacion, '%%Y-%%m') AS mes,
                 tipo_transaccion,
                 SUM(monto) AS total
             FROM transacciones

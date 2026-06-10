@@ -1,12 +1,7 @@
+import pymysql
 import os
-import mysql.connector
-
 
 class conexion_bd:
-    """
-    Clase de conexión y ejecución de operaciones
-    sobre la base de datos MySQL.
-    """
 
     def __init__(self):
         self.host = os.getenv("DB_HOST")
@@ -14,23 +9,17 @@ class conexion_bd:
         self.password = os.getenv("DB_PASSWORD")
         self.database = os.getenv("DB_NAME")
         self.port = int(os.getenv("DB_PORT", 3306))
-        
-        self.conn = None
-        self.cursor = None
-
-    # ============================
-    # CONEXIÓN
-    # ============================
 
     def conectar(self):
-        """Abre la conexión con la base de datos."""
-        self.conn = mysql.connector.connect(
+        self.conn = pymysql.connect(
             host=self.host,
             user=self.user,
             password=self.password,
-            database=self.database
+            database=self.database,
+            port=self.port,
+            cursorclass=pymysql.cursors.DictCursor
         )
-        self.cursor = self.conn.cursor(dictionary=True)
+        self.cursor = self.conn.cursor()
 
     def cerrar(self):
         """Cierra cursor y conexión."""

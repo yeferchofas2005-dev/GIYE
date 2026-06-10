@@ -199,6 +199,7 @@ class Controller:
         datos_tabla = []
         total_deuda = 0
         total_abonos = 0
+        total_nequi = 0
 
         # Recorremos cada transacción para construir la tabla y acumular totales
         for transaccion in transacciones:
@@ -211,49 +212,77 @@ class Controller:
 
             tipo = transaccion['tipo_transaccion']         # "DEUDA" o "INGRESO"
             monto = int(transaccion['monto'])              # monto convertido a int para cálculos
+            subtipo = transaccion["subtipo_transaccion"]
+            estado_deuda = transaccion["estado_deuda"]     # "PENDIENTE", "CANCELADA", etc.
             accion = ""
 
-            estado_deuda = transaccion["estado_deuda"]     # "PENDIENTE", "CANCELADA", etc.
-
             if tipo == "DEUDA":
-                # Si es deuda, la columna 'debe' recibe el monto
+
                 debe = monto
                 abono = 0
 
-                # Si la deuda está pendiente, la sumamos al total de deuda
                 if estado_deuda == "PENDIENTE":
                     total_deuda += monto
 
-                # Acción visible en la tabla (permite tachar)
+                # ==========================
+                # DEUDA NEQUI YA RECIBIDA
+                # ==========================
+                elif estado_deuda in ["CANCELADA", "PAGADA"] and subtipo == "NEQUI_RECIBIDO":
+                    total_nequi += monto
+
                 accion = "Tachar"
+
             else:
-                # Si no es deuda, se considera ingreso/abono
+
                 debe = 0
                 abono = monto
-                total_abonos += monto
+
+                # ==========================
+                # MOVIMIENTOS NEQUI
+                # ==========================
+                if subtipo == "NEQUI_RECIBIDO":
+                    total_nequi += monto
+
+                # ==========================
+                # DINERO REAL EN CAJA
+                # ==========================
+                else:
+                    total_abonos += monto
+
                 accion = "---"
 
             # Agregamos la fila a los datos que recibirá la vista.
             # La vista espera: (id_transaccion, nombre, debe, abono, fecha, accion, estado_deuda)
-            datos_tabla.append((transaccion["id_transaccion"], nombre, debe, abono, fecha, accion, estado_deuda))
+            datos_tabla.append(
+                (
+                    transaccion["id_transaccion"],
+                    nombre,
+                    debe,
+                    abono,
+                    fecha,
+                    accion,
+                    estado_deuda,
+                    subtipo
+                )
+            )
 
         # Separamos los dígitos de los totales con puntos (ej. 2000000 -> "2.000.000") para mostrar al usuario
         total_abonos_formateado = f'{total_abonos:,}'.replace(',', '.')
         total_deudas_formateado = f'{total_deuda:,}'.replace(',', '.')
+        total_nequi_formateado = f'{total_nequi:,}'.replace(',', '.')
 
-        # Enviamos todo al panel dashboard junto con los callbacks para acciones del UI
+        # Enviamos todo al panel dashboard junto con los callbacks para acciones del usuario
         self.ventana.set_panel_dashboard(
             datos_tabla,
             total_deudas_formateado,
             total_abonos_formateado,
+            total_nequi_formateado,
             on_nuevo_abono=self.registrar_nuevo_abono,
             on_nueva_deuda=self.registrar_nueva_deuda,
             on_filtrar=self.aplicar_filtros,
-            on_trachar=self.tachar_deuda,
+            on_tachar=self.tachar_deuda,
             on_regresar=self.regresar_inicio
         )
-
-    # Metodo para actualizar dashboard usando filtros
     def _filtrar_dashboard(self, transacciones):
         """
         Similar a recargar_dashboard, pero recibe una lista de transacciones ya filtradas.
@@ -266,42 +295,79 @@ class Controller:
         datos_tabla = []
         total_deuda = 0
         total_abonos = 0
+        total_nequi = 0
 
         for transaccion in transacciones:
             nombre = Cliente.obtener_nombre_por_id(transaccion['id_cliente'])
             fecha = transaccion['fecha_creacion'].strftime("%Y-%m-%d-%H:%M:%S")
             tipo = transaccion['tipo_transaccion']
             monto = int(transaccion['monto'])
+            subtipo = transaccion["subtipo_transaccion"]
+            estado_deuda = transaccion["estado_deuda"]
             accion = ""
 
-            estado_deuda = transaccion["estado_deuda"]
-
             if tipo == "DEUDA":
+
                 debe = monto
                 abono = 0
 
                 if estado_deuda == "PENDIENTE":
                     total_deuda += monto
 
+                # ==========================
+                # DEUDA NEQUI YA RECIBIDA
+                # ==========================
+                elif estado_deuda in ["CANCELADA", "PAGADA"] and subtipo == "NEQUI_RECIBIDO":
+                    total_nequi += monto
+
                 accion = "Tachar"
+
             else:
+
                 debe = 0
                 abono = monto
-                total_abonos += monto
+
+                # ==========================
+                # MOVIMIENTOS NEQUI
+                # ==========================
+                if subtipo == "NEQUI_RECIBIDO":
+                    total_nequi += monto
+
+                # ==========================
+                # DINERO REAL EN CAJA
+                # ==========================
+                else:
+                    total_abonos += monto
+
                 accion = "---"
 
-            datos_tabla.append((transaccion["id_transaccion"], nombre, debe, abono, fecha, accion, estado_deuda))
+            datos_tabla.append(
+                (
+                    transaccion["id_transaccion"],
+                    nombre,
+                    debe,
+                    abono,
+                    fecha,
+                    accion,
+                    estado_deuda,
+                    subtipo
+                )
+            )
 
-        # Actualiza el panel dashboard (aquí no se formatean los totales; se pasan tal cual)
+        total_abonos_formateado = f'{total_abonos:,}'.replace(',', '.')
+        total_deuda_formateado = f'{total_deuda:,}'.replace(',', '.')
+        total_nequi_formateado = f'{total_nequi:,}'.replace(',', '.')
+
         self.ventana.set_panel_dashboard(
             datos_tabla,
-            total_deuda,
-            total_abonos,
-            self.registrar_nuevo_abono,
-            self.registrar_nueva_deuda,
-            self.aplicar_filtros,
-            self.tachar_deuda,
-            self.regresar_inicio
+            total_deuda_formateado,
+            total_abonos_formateado,
+            total_nequi_formateado,
+            on_nuevo_abono=self.registrar_nuevo_abono,
+            on_nueva_deuda=self.registrar_nueva_deuda,
+            on_filtrar=self.aplicar_filtros,
+            on_tachar=self.tachar_deuda,
+            on_regresar=self.regresar_inicio
         )
 
     # ---------------------------------------------------------------------
@@ -383,7 +449,7 @@ class Controller:
             "Nuevo Abono",
             "ABONO",
             clientes,
-            self.agregar_cliente
+            self.agregar_cliente        
         )
 
         if datos is None:
@@ -569,7 +635,7 @@ class Controller:
         - Construye un string con los campos relevantes y lo muestra en una ventana.
         """
         # Marcamos variables traidas desde la tabla principal.
-        id, cliente, deuda, abono, fecha, _ = valores
+        id, cliente, deuda, abono, fecha, _, _, _ = valores
 
         # Consultamos informacion sobre la transaccion y el cliente.
         datos_transaccion = Transaccion.obtener_por_id(id)
@@ -590,6 +656,7 @@ class Controller:
             f"📂 Subtipo:           {datos_transaccion['subtipo_transaccion']}\n"
             f"📅 Fecha:             {valores[4]}\n"
             f"💰 Monto:             {abono if abono > 0 else deuda}\n"
+            f"🪢 Referencia:        {datos_transaccion['referencia_original'] if datos_transaccion['referencia_original'] else 'N/A'}\n"
             f"📝 Descripción:       {datos_transaccion['descripcion'] if datos_transaccion['descripcion'] else 'N/A'}\n"
             f"📊 Estado de Deuda:   {datos_transaccion['estado_deuda']}\n"
             f"👨‍💼 Encargado por:    {Cliente.obtener_nombre_por_id(datos_transaccion['id_empleado'])}\n"
@@ -605,36 +672,124 @@ class Controller:
     # Metodo para tachar una deuda como pagada
     def tachar_deuda(self, id_transaccion):
         """
-        Marca una deuda como 'CANCELADA' (tachada) tras diversas comprobaciones:
-        - Si la deuda pertenece a un empleado, se requiere contraseña de administrador.
-        - Pide confirmación al usuario.
-        - Si todo es correcto, actualiza el estado en la base de datos y recarga el dashboard.
+        Marca una deuda como pagada.
+
+        Reglas:
+        - NEQUI_PENDIENTE:
+            Solo se cancela la deuda.
+            No se generan movimientos adicionales.
+
+        - FIADO / PRESTAMO:
+            Se pregunta si pagó por Nequi.
+            Si paga por Nequi:
+                Solo se cancela la deuda.
+            Si paga en efectivo:
+                Se cancela la deuda y se genera un PAGO_DEUDA.
         """
+
         transaccion = Transaccion.obtener_por_id(id_transaccion)
 
-        # Si la transacción pertenece a un empleado, no permitimos marcarla sin validar.
+        # Validación para empleados
         if Cliente.es_empleado(transaccion["id_cliente"]):
-            ventana_emergente.mostrar_advertencia("Acción No Permitida", "No puedes tachar una deuda de un empleado.")
-            contraseña_admin = ventana_emergente.pedir_contraseña("Ingrese contrasela de administrador para continuar:", "Autenticación Requerida")
 
-            # Verificamos la contraseña con los datos de configuración
+            ventana_emergente.mostrar_advertencia(
+                "Acción No Permitida",
+                "No puedes tachar una deuda de un empleado."
+            )
+
+            contraseña_admin = ventana_emergente.pedir_contraseña(
+                "Ingrese contraseña de administrador para continuar:",
+                "Autenticación Requerida"
+            )
+
             if not contraseña_admin or not DatosConfiguracion.comparar_contraseña(contraseña_admin):
-                ventana_emergente.mostrar_error("Autenticación Fallida", "Contraseña de administrador incorrecta. No se puede tachar la deuda.")
+                ventana_emergente.mostrar_error(
+                    "Autenticación Fallida",
+                    "Contraseña de administrador incorrecta. No se puede tachar la deuda."
+                )
                 return
 
-        # Preguntamos en ventana emergente si se confirma la acción
-        confirmar = ventana_emergente.preguntar_confirmacion("Confirmar Tachar Deuda", "¿Estás seguro de que deseas marcar esta deuda como PAGADA?")
+        confirmar = ventana_emergente.preguntar_confirmacion(
+            "Confirmar Tachar Deuda",
+            "¿Estás seguro de que deseas marcar esta deuda como PAGADA?"
+        )
 
-        # Si el usuario no confirma, salimos
         if not confirmar:
             return
 
-        # Actualizamos el estado de la transacción en la BD
+        # --------------------------------------------------------
+        # CASO 1: DEUDA QUE NACIÓ COMO NEQUI_PENDIENTE
+        # --------------------------------------------------------
+        if transaccion["subtipo_transaccion"] == "NEQUI_PENDIENTE":
+
+            Transaccion.actualizar_estado(id_transaccion, "CANCELADA")
+            Transaccion.actualizar_subtipo(id_transaccion, "NEQUI_RECIBIDO")
+
+            ventana_emergente.mostrar_informacion(
+                "Éxito",
+                "La deuda Nequi ha sido cancelada correctamente."
+            )
+
+            self.recargar_dashboard()
+            return
+
+        # --------------------------------------------------------
+        # CASO 2: FIADO / PRESTAMO
+        # --------------------------------------------------------
+        pago_por_nequi = ventana_emergente.preguntar_confirmacion(
+            "Forma de pago",
+            "¿La deuda fue pagada por Nequi?"
+        )
+
+        # --------------------------------------------------------
+        # PAGÓ POR NEQUI
+        # --------------------------------------------------------
+        if pago_por_nequi:
+
+            Transaccion.actualizar_estado(id_transaccion, "CANCELADA")
+
+            Transaccion.agregar(
+                fecha_creacion=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                tipo_transaccion="INGRESO",
+                subtipo_transaccion="NEQUI_RECIBIDO",
+                monto=transaccion["monto"],
+                id_cliente=transaccion["id_cliente"],
+                id_empleado=self.id_empleado_en_turno,
+                descripcion=f"PAGO POR NEQUI DE DEUDA DEL DIA {transaccion['fecha_creacion'].strftime('%Y-%m-%d %H:%M:%S')}",
+                saldo_afectado=transaccion["monto"],
+                estado_deuda="PAGADA"
+            )
+
+            ventana_emergente.mostrar_informacion(
+                "Éxito",
+                "La deuda fue cancelada correctamente por Nequi."
+            )
+
+            self.recargar_dashboard()
+            return
+
+        # --------------------------------------------------------
+        # PAGÓ EN EFECTIVO
+        # --------------------------------------------------------
         Transaccion.actualizar_estado(id_transaccion, "CANCELADA")
 
-        ventana_emergente.mostrar_informacion("Éxito", "La deuda ha sido cancelada correctamente !")
+        Transaccion.agregar(
+            fecha_creacion=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            tipo_transaccion="INGRESO",
+            subtipo_transaccion="PAGO_DEUDA",
+            monto=transaccion["monto"],
+            id_cliente=transaccion["id_cliente"],
+            id_empleado=self.id_empleado_en_turno,
+            descripcion=f"SE PAGO DEUDA DEL DIA {transaccion['fecha_creacion'].strftime('%Y-%m-%d %H:%M:%S')}",
+            saldo_afectado=transaccion["monto"],
+            estado_deuda='PAGADA'
+        )
 
-        # Recargamos el dashboard para reflejar el cambio
+        ventana_emergente.mostrar_informacion(
+            "Éxito",
+            "La deuda ha sido cancelada correctamente."
+        )
+
         self.recargar_dashboard()
 
 # -------------------------------------------------------------------------

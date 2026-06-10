@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 
 from vista.panel_inicio import panel_inicio
 from vista.panel_dashboard import panel_dashboard
@@ -30,16 +31,37 @@ class Ventana(tk.Tk):
         """
         super().__init__()
 
+        # Estilo global moderno
+        style = ttk.Style()
+        style.theme_use("clam")
+
+        style.configure(
+            "Treeview",
+            rowheight=30,
+            font=("Segoe UI", 10)
+        )
+
+        style.configure(
+            "Treeview.Heading",
+            font=("Segoe UI", 10, "bold")
+        )
+
+        self.configure(bg="#f4f6f9")
+
         self.title("GYIE - Gestion Yalejo de Ingresos y Egresos.")
 
         # Fullscreen con bordes
         # Linux
-        self.attributes("-zoomed", True)
+        #self.attributes("-zoomed", True)
         # Windows
-        # self.state("zoomed")
+        self.state("zoomed")
+        self.iconbitmap("assets/icono.ico")
 
         # Contenedor principal donde se cargan los paneles
-        self.contenedor = tk.Frame(self)
+        self.contenedor = tk.Frame(
+            self,
+            bg="#f4f6f9"
+        )
         self.contenedor.pack(fill="both", expand=True)
 
         # Referencia al panel actualmente visible
@@ -113,10 +135,11 @@ class Ventana(tk.Tk):
         datos_tabla,
         total_deuda,
         total_abono,
+        total_nequi,
         on_nuevo_abono,
         on_nueva_deuda,
         on_filtrar,
-        on_trachar,
+        on_tachar,
         on_regresar
     ):
         """
@@ -142,10 +165,11 @@ class Ventana(tk.Tk):
             datos_tabla,
             total_deuda,
             total_abono,
+            total_nequi,
             on_nuevo_abono=on_nuevo_abono,
             on_nueva_deuda=on_nueva_deuda,
             on_filtrar=on_filtrar,
-            on_tachar=on_trachar,
+            on_tachar=on_tachar,
             on_regresar=on_regresar
         )
 

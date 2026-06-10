@@ -52,3 +52,9 @@ class Transaccion:
         db = conexion_bd()
         query = "UPDATE transacciones SET estado_deuda = %s WHERE id_transaccion = %s"
         db.ejecutar(query, (nuevo_estado, id_transaccion))
+
+    @staticmethod
+    def actualizar_subtipo(id_transaccion, nuevo_subtipo):
+        db = conexion_bd()
+        query = "UPDATE transacciones SET subtipo_transaccion = %s WHERE id_transaccion = %s"
+        db.ejecutar(query, (nuevo_subtipo, id_transaccion))

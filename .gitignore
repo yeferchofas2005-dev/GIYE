@@ -1,5 +1,77 @@
+# ================================
+# PYTHON
+# ================================
 __pycache__/
-*.venv
-*.pyc
+*.py[cod]
 *.pyo
+*.pyd
+*.so
+
+# Entornos virtuales
 .env
+.venv/
+venv/
+env/
+ENV/
+
+# Distribución / empaquetado
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+
+# ================================
+# IDEs Y EDITORES
+# ================================
+
+# VS Code
+.vscode/
+
+# PyCharm / JetBrains
+.idea/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ================================
+# SISTEMA OPERATIVO
+# ================================
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+
+# Linux
+*~
+
+# ================================
+# PROYECTO GYIE
+# ================================
+
+# Backups generados por el sistema
+backups/
+*.xlsx
+*.xls
+
+# Logs
+*.log
+logs/
+
+# Archivos de configuración sensibles
+*.ini
+secrets.py
+config_local.py
+
+# Iconos y assets compilados (solo ignorar binarios generados)
+assets/*.tmp
+
+# Coverage y tests
+.coverage
+htmlcov/
+.pytest_cache/

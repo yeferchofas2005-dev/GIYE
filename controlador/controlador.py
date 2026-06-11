@@ -283,6 +283,7 @@ class Controller:
             on_tachar=self.tachar_deuda,
             on_regresar=self.regresar_inicio
         )
+        
     def _filtrar_dashboard(self, transacciones):
         """
         Similar a recargar_dashboard, pero recibe una lista de transacciones ya filtradas.
@@ -1207,7 +1208,7 @@ class Controller:
             ventana_emergente.mostrar_error("Error!", "Las contraseñas no coinciden. Intente nuevamente.")
             return
         
-    # Ver estadísticas del sistema
+# Ver estadísticas del sistema
     def ver_estadisticas(self):
         """
         Muestra el panel de estadísticas del sistema.
@@ -1225,10 +1226,14 @@ class Controller:
 
         FUENTES DE DATOS:
         -----------------
-        - clientes_mayor_deuda: Clientes con mayor monto de deuda
-        - deuda_vs_abono: Total acumulado de deudas frente a abonos
-        - deudas_antiguas: Listado de las deudas más antiguas
-        - transacciones_por_mes: Resumen mensual de deudas y abonos
+        - clientes_mayor_deuda    : Clientes con mayor monto de deuda pendiente
+        - deuda_vs_abono          : Total acumulado histórico de deudas frente a abonos
+        - deudas_antiguas         : Deudas pendientes más antiguas con días transcurridos
+        - transacciones_por_mes   : Resumen mensual de deudas y abonos
+        - resumen_hoy             : KPIs del día actual (caja, nequi, deudas nuevas, pagadas)
+        - rendimiento_empleados   : Cuánto fió cada empleado y qué porcentaje se recuperó
+        - flujo_semanal           : Entradas vs deudas nuevas de los últimos 7 días
+        - clientes_riesgosos      : Clientes con deuda antigua sin ningún pago reciente
 
         FLUJO:
         ------
@@ -1251,5 +1256,9 @@ class Controller:
             deuda_vs_abono=datos_graficas.obtener_total_deudas_y_abonos(),
             deudas_antiguas=datos_graficas.obtener_lista_deudas_mas_antiguas(),
             transacciones_por_mes=datos_graficas.obtener_transacciones_por_mes(),
+            resumen_hoy=datos_graficas.obtener_resumen_hoy(),
+            rendimiento_empleados=datos_graficas.obtener_rendimiento_por_empleado(),
+            flujo_semanal=datos_graficas.obtener_flujo_semanal(),
+            clientes_riesgosos=datos_graficas.obtener_clientes_riesgosos(),
             on_regresar=self.regresar_inicio
         )

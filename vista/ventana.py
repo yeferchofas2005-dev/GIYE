@@ -303,6 +303,10 @@ class Ventana(tk.Tk):
         deuda_vs_abono,
         deudas_antiguas,
         transacciones_por_mes,
+        resumen_hoy,
+        rendimiento_empleados,
+        flujo_semanal,
+        clientes_riesgosos,
         on_regresar
     ):
         panel = panel_administrador_estadisticas(
@@ -311,6 +315,10 @@ class Ventana(tk.Tk):
             deuda_vs_abono=deuda_vs_abono,
             deudas_antiguas=deudas_antiguas,
             transacciones_por_mes=transacciones_por_mes,
+            resumen_hoy=resumen_hoy,
+            rendimiento_empleados=rendimiento_empleados,
+            flujo_semanal=flujo_semanal,
+            clientes_riesgosos=clientes_riesgosos,
             on_regresar=on_regresar
         )
 

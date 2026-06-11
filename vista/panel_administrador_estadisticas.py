@@ -7,18 +7,19 @@ from matplotlib.figure import Figure
 class panel_administrador_estadisticas(tk.Frame):
 
     # ── Paleta ──────────────────────────────────────────────
-    BG           = "#0f172a"   # fondo principal azul muy oscuro
-    SIDEBAR      = "#1e293b"   # barra superior
-    CARD         = "#1e293b"   # tarjetas
-    CARD_BORDER  = "#334155"   # borde tarjeta
-    ACCENT_BLUE  = "#3b82f6"   # azul principal
-    ACCENT_GREEN = "#22c55e"   # verde (abonos)
-    ACCENT_RED   = "#ef4444"   # rojo (deudas)
-    ACCENT_PURP  = "#a855f7"   # morado (nequi)
-    TEXT_PRIMARY = "#f1f5f9"   # texto principal
-    TEXT_MUTED   = "#94a3b8"   # texto secundario
-    PLOT_BG      = "#1e293b"   # fondo de gráficos
-    PLOT_TEXT    = "#94a3b8"   # texto de ejes
+    BG           = "#0f172a"
+    SIDEBAR      = "#1e293b"
+    CARD         = "#1e293b"
+    CARD_BORDER  = "#334155"
+    ACCENT_BLUE  = "#3b82f6"
+    ACCENT_GREEN = "#22c55e"
+    ACCENT_RED   = "#ef4444"
+    ACCENT_PURP  = "#a855f7"
+    ACCENT_AMBER = "#f59e0b"
+    TEXT_PRIMARY = "#f1f5f9"
+    TEXT_MUTED   = "#94a3b8"
+    PLOT_BG      = "#1e293b"
+    PLOT_TEXT    = "#94a3b8"
 
     def __init__(
         self,
@@ -27,6 +28,10 @@ class panel_administrador_estadisticas(tk.Frame):
         deuda_vs_abono,
         deudas_antiguas,
         transacciones_por_mes,
+        resumen_hoy,
+        rendimiento_empleados,
+        flujo_semanal,
+        clientes_riesgosos,
         on_regresar
     ):
         super().__init__(master, bg=self.BG)
@@ -63,7 +68,7 @@ class panel_administrador_estadisticas(tk.Frame):
         ).pack(side="left", padx=10)
 
         # ══════════════════════════════════════════════════
-        # CANVAS SCROLLABLE
+        # CANVAS SCROLLABLE PRINCIPAL
         # ══════════════════════════════════════════════════
         outer = tk.Frame(self, bg=self.BG)
         outer.pack(fill="both", expand=True)
@@ -92,64 +97,109 @@ class panel_administrador_estadisticas(tk.Frame):
         canvas.bind("<Configure>", _resize)
         contenido.bind("<Configure>", _scroll_update)
 
-        # guardamos referencia para usarla en los helpers de gráficos
         self._scroll_canvas = canvas
 
-        def _scroll(e):
-            canvas.yview_scroll(int(-1*(e.delta/120)), "units")
-
-        canvas.bind_all("<MouseWheel>", _scroll)
+        canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
         canvas.bind_all("<Button-4>",   lambda e: canvas.yview_scroll(-1, "units"))
-        canvas.bind_all("<Button-5>",   lambda e: canvas.yview_scroll(1,  "units"))
+        canvas.bind_all("<Button-5>",   lambda e: canvas.yview_scroll(1, "units"))
 
         # ══════════════════════════════════════════════════
-        # FILA 0 — KPI CARDS
+        # SECCIÓN 1 — RESUMEN DE HOY
         # ══════════════════════════════════════════════════
-        kpi_row = tk.Frame(contenido, bg=self.BG)
-        kpi_row.pack(fill="x", padx=24, pady=(20, 0))
+        self._seccion_titulo(contenido, "📅  Resumen de hoy")
 
-        total_deuda  = deuda_vs_abono.get("DEUDA", 0)
+        kpi_hoy = tk.Frame(contenido, bg=self.BG)
+        kpi_hoy.pack(fill="x", padx=24, pady=(0, 16))
+
+        self._kpi(kpi_hoy, "Caja hoy",        f"${resumen_hoy['total_caja']:,.0f}",       self.ACCENT_GREEN, "💵")
+        self._kpi(kpi_hoy, "Nequi hoy",        f"${resumen_hoy['total_nequi']:,.0f}",      self.ACCENT_PURP,  "📱")
+        self._kpi(kpi_hoy, "Deudas nuevas",    f"{resumen_hoy['deudas_nuevas']}",          self.ACCENT_RED,   "📋")
+        self._kpi(kpi_hoy, "Monto fiado hoy",  f"${resumen_hoy['monto_deudas_hoy']:,.0f}", self.ACCENT_AMBER, "💸")
+        self._kpi(kpi_hoy, "Deudas pagadas",   f"{resumen_hoy['deudas_pagadas']}",         self.ACCENT_BLUE,  "✅")
+
+        # ══════════════════════════════════════════════════
+        # SECCIÓN 2 — KPIs GLOBALES
+        # ══════════════════════════════════════════════════
+        self._seccion_titulo(contenido, "📊  Resumen global")
+
+        kpi_global = tk.Frame(contenido, bg=self.BG)
+        kpi_global.pack(fill="x", padx=24, pady=(0, 16))
+
+        total_deuda   = deuda_vs_abono.get("DEUDA", 0)
         total_ingreso = deuda_vs_abono.get("INGRESO", 0)
-        ratio = (total_ingreso / total_deuda * 100) if total_deuda > 0 else 0
-        n_morosos = len(clientes_mayor_deuda)
+        ratio         = (total_ingreso / total_deuda * 100) if total_deuda > 0 else 0
+        n_morosos     = len(clientes_mayor_deuda)
+        n_riesgosos   = len(clientes_riesgosos)
 
-        self._kpi(kpi_row, "Total en deuda",    f"${total_deuda:,.0f}",   self.ACCENT_RED,   "💸")
-        self._kpi(kpi_row, "Total recuperado",  f"${total_ingreso:,.0f}", self.ACCENT_GREEN, "✅")
-        self._kpi(kpi_row, "Ratio de cobro",    f"{ratio:.1f}%",          self.ACCENT_BLUE,  "📈")
-        self._kpi(kpi_row, "Clientes con deuda",f"{n_morosos}",           self.ACCENT_PURP,  "👥")
+        self._kpi(kpi_global, "Total en deuda",     f"${total_deuda:,.0f}",   self.ACCENT_RED,   "💸")
+        self._kpi(kpi_global, "Total recuperado",   f"${total_ingreso:,.0f}", self.ACCENT_GREEN, "✅")
+        self._kpi(kpi_global, "Ratio de cobro",     f"{ratio:.1f}%",          self.ACCENT_BLUE,  "📈")
+        self._kpi(kpi_global, "Clientes con deuda", f"{n_morosos}",           self.ACCENT_PURP,  "👥")
+        self._kpi(kpi_global, "Clientes riesgosos", f"{n_riesgosos}",         self.ACCENT_AMBER, "⚠️")
 
         # ══════════════════════════════════════════════════
-        # FILA 1 — BARRAS CLIENTES  +  PASTEL
+        # SECCIÓN 3 — FLUJO SEMANAL + PASTEL
         # ══════════════════════════════════════════════════
-        fila1 = tk.Frame(contenido, bg=self.BG)
-        fila1.pack(fill="x", padx=24, pady=16)
-        fila1.columnconfigure(0, weight=3)
-        fila1.columnconfigure(1, weight=2)
+        self._seccion_titulo(contenido, "📆  Flujo de la semana")
 
-        self._grafico_barras_clientes(fila1, clientes_mayor_deuda).grid(
+        fila_semana = tk.Frame(contenido, bg=self.BG)
+        fila_semana.pack(fill="x", padx=24, pady=(0, 16))
+        fila_semana.columnconfigure(0, weight=3)
+        fila_semana.columnconfigure(1, weight=2)
+
+        self._grafico_flujo_semanal(fila_semana, flujo_semanal).grid(
             row=0, column=0, sticky="nsew", padx=(0, 10)
         )
-        self._grafico_pastel(fila1, deuda_vs_abono).grid(
+        self._grafico_pastel(fila_semana, deuda_vs_abono).grid(
             row=0, column=1, sticky="nsew"
         )
 
         # ══════════════════════════════════════════════════
-        # FILA 2 — BARRAS POR MES
+        # SECCIÓN 4 — CLIENTES CON MAYOR DEUDA + RIESGOSOS
         # ══════════════════════════════════════════════════
-        fila2 = tk.Frame(contenido, bg=self.BG)
-        fila2.pack(fill="x", padx=24, pady=(0, 16))
+        self._seccion_titulo(contenido, "👥  Clientes")
 
-        self._grafico_barras_por_mes(fila2, transacciones_por_mes).pack(
-            fill="x"
+        fila_clientes = tk.Frame(contenido, bg=self.BG)
+        fila_clientes.pack(fill="x", padx=24, pady=(0, 16))
+        fila_clientes.columnconfigure(0, weight=1)
+        fila_clientes.columnconfigure(1, weight=1)
+
+        self._grafico_barras_clientes(fila_clientes, clientes_mayor_deuda).grid(
+            row=0, column=0, sticky="nsew", padx=(0, 10)
+        )
+        self._tabla_clientes_riesgosos(fila_clientes, clientes_riesgosos).grid(
+            row=0, column=1, sticky="nsew"
         )
 
         # ══════════════════════════════════════════════════
-        # FILA 3 — TABLA DEUDAS ANTIGUAS
+        # SECCIÓN 5 — RENDIMIENTO EMPLEADOS
         # ══════════════════════════════════════════════════
-        fila3 = tk.Frame(contenido, bg=self.BG)
-        fila3.pack(fill="x", padx=24, pady=(0, 24))
+        self._seccion_titulo(contenido, "👨‍💼  Rendimiento por empleado")
 
-        self._tabla_deudas_antiguas(fila3, deudas_antiguas).pack(fill="x")
+        fila_empleados = tk.Frame(contenido, bg=self.BG)
+        fila_empleados.pack(fill="x", padx=24, pady=(0, 16))
+
+        self._tabla_rendimiento_empleados(fila_empleados, rendimiento_empleados).pack(fill="x")
+
+        # ══════════════════════════════════════════════════
+        # SECCIÓN 6 — MOVIMIENTOS POR MES
+        # ══════════════════════════════════════════════════
+        self._seccion_titulo(contenido, "📅  Movimientos por mes")
+
+        fila_mes = tk.Frame(contenido, bg=self.BG)
+        fila_mes.pack(fill="x", padx=24, pady=(0, 16))
+
+        self._grafico_barras_por_mes(fila_mes, transacciones_por_mes).pack(fill="x")
+
+        # ══════════════════════════════════════════════════
+        # SECCIÓN 7 — DEUDAS MÁS ANTIGUAS
+        # ══════════════════════════════════════════════════
+        self._seccion_titulo(contenido, "🕰️  Deudas más antiguas sin pagar")
+
+        fila_antiguas = tk.Frame(contenido, bg=self.BG)
+        fila_antiguas.pack(fill="x", padx=24, pady=(0, 32))
+
+        self._tabla_deudas_antiguas(fila_antiguas, deudas_antiguas).pack(fill="x")
 
     # ══════════════════════════════════════════════════════
     # ESTILOS TTK
@@ -164,7 +214,6 @@ class panel_administrador_estadisticas(tk.Frame):
             bordercolor=self.BG,
             arrowcolor=self.TEXT_PRIMARY
         )
-
         style.configure(
             "Dark.Treeview",
             background=self.CARD,
@@ -182,8 +231,6 @@ class panel_administrador_estadisticas(tk.Frame):
             relief="flat"
         )
         style.map("Dark.Treeview", background=[("selected", "#3b82f6")])
-
-        # scrollbar delgada y discreta para tablas internas
         style.configure(
             "Thin.Vertical.TScrollbar",
             background="#334155",
@@ -192,7 +239,6 @@ class panel_administrador_estadisticas(tk.Frame):
             arrowcolor=self.CARD,
             width=6
         )
-
         style.configure(
             "Thin.Horizontal.TScrollbar",
             background="#334155",
@@ -200,6 +246,26 @@ class panel_administrador_estadisticas(tk.Frame):
             bordercolor=self.CARD,
             arrowcolor=self.CARD,
             width=6
+        )
+
+    # ══════════════════════════════════════════════════════
+    # TÍTULO DE SECCIÓN
+    # ══════════════════════════════════════════════════════
+    def _seccion_titulo(self, parent, texto):
+        """Separador visual con línea y acento azul entre secciones."""
+        row = tk.Frame(parent, bg=self.BG)
+        row.pack(fill="x", padx=24, pady=(20, 8))
+
+        tk.Frame(row, bg=self.ACCENT_BLUE, width=4, height=22).pack(side="left")
+        tk.Label(
+            row,
+            text=f"  {texto}",
+            bg=self.BG,
+            fg=self.TEXT_PRIMARY,
+            font=("Segoe UI", 13, "bold")
+        ).pack(side="left")
+        tk.Frame(row, bg=self.CARD_BORDER, height=1).pack(
+            side="left", fill="x", expand=True, padx=(12, 0), pady=10
         )
 
     # ══════════════════════════════════════════════════════
@@ -212,20 +278,19 @@ class panel_administrador_estadisticas(tk.Frame):
             highlightbackground=self.CARD_BORDER,
             highlightthickness=1
         )
-        card.pack(side="left", fill="both", expand=True, padx=(0, 12))
+        card.pack(side="left", fill="both", expand=True, padx=(0, 10))
 
-        # franja de color izquierda
         tk.Frame(card, bg=color, width=5).pack(side="left", fill="y")
 
         inner = tk.Frame(card, bg=self.CARD)
-        inner.pack(side="left", fill="both", expand=True, padx=16, pady=14)
+        inner.pack(side="left", fill="both", expand=True, padx=14, pady=12)
 
         tk.Label(
             inner,
             text=f"{icono}  {label}",
             bg=self.CARD,
             fg=self.TEXT_MUTED,
-            font=("Segoe UI", 10)
+            font=("Segoe UI", 9)
         ).pack(anchor="w")
 
         tk.Label(
@@ -233,8 +298,8 @@ class panel_administrador_estadisticas(tk.Frame):
             text=valor,
             bg=self.CARD,
             fg=color,
-            font=("Segoe UI", 20, "bold")
-        ).pack(anchor="w", pady=(4, 0))
+            font=("Segoe UI", 18, "bold")
+        ).pack(anchor="w", pady=(3, 0))
 
     # ══════════════════════════════════════════════════════
     # CARD CONTENEDOR
@@ -250,13 +315,13 @@ class panel_administrador_estadisticas(tk.Frame):
         header = tk.Frame(frame, bg=self.CARD)
         header.pack(fill="x", padx=18, pady=(14, 0))
 
-        tk.Frame(header, bg=self.ACCENT_BLUE, width=4, height=18).pack(side="left")
+        tk.Frame(header, bg=self.ACCENT_BLUE, width=4, height=16).pack(side="left")
         tk.Label(
             header,
             text=f"  {titulo}",
             bg=self.CARD,
             fg=self.TEXT_PRIMARY,
-            font=("Segoe UI", 12, "bold")
+            font=("Segoe UI", 11, "bold")
         ).pack(side="left")
 
         cuerpo = tk.Frame(frame, bg=self.CARD)
@@ -272,7 +337,7 @@ class panel_administrador_estadisticas(tk.Frame):
         fig.subplots_adjust(left=0.12, right=0.97, top=0.92, bottom=0.22)
         return fig
 
-    def _estilo_ax(self, ax, title=""):
+    def _estilo_ax(self, ax):
         ax.set_facecolor(self.PLOT_BG)
         ax.tick_params(colors=self.PLOT_TEXT, labelsize=9)
         ax.spines["top"].set_visible(False)
@@ -281,11 +346,9 @@ class panel_administrador_estadisticas(tk.Frame):
             ax.spines[s].set_color("#334155")
         ax.yaxis.label.set_color(self.PLOT_TEXT)
         ax.xaxis.label.set_color(self.PLOT_TEXT)
-        if title:
-            ax.set_title(title, color=self.TEXT_MUTED, fontsize=9, pad=6)
 
     # ══════════════════════════════════════════════════════
-    # HELPER: embeber figura y reenviar scroll
+    # HELPER: embeber figura y reenviar scroll al canvas principal
     # ══════════════════════════════════════════════════════
     def _embed_figura(self, fig, parent):
         widget = FigureCanvasTkAgg(fig, parent).get_tk_widget()
@@ -293,57 +356,99 @@ class panel_administrador_estadisticas(tk.Frame):
         sc = self._scroll_canvas
         widget.bind("<MouseWheel>", lambda e: sc.yview_scroll(int(-1*(e.delta/120)), "units"))
         widget.bind("<Button-4>",   lambda e: sc.yview_scroll(-1, "units"))
-        widget.bind("<Button-5>",   lambda e: sc.yview_scroll(1,  "units"))
+        widget.bind("<Button-5>",   lambda e: sc.yview_scroll(1, "units"))
 
     # ══════════════════════════════════════════════════════
-    # GRÁFICO: CLIENTES CON MAYOR DEUDA
+    # HELPER: tabla oscura reutilizable con scroll interno
     # ══════════════════════════════════════════════════════
-    def _grafico_barras_clientes(self, parent, datos):
-        card, cuerpo = self._card(parent, "Clientes con mayor deuda pendiente")
+    def _tabla(self, parent, columnas, filas, anchos=None, altura=8):
+        """
+        Crea un Treeview oscuro con scrollbar vertical interna minimalista.
 
-        nombres = [d["cliente"] for d in datos]
-        montos  = [d["total_deuda"] for d in datos]
+        Parámetros:
+        -----------
+        columnas : list de tuplas (id, texto_cabecera, anchor)
+        filas    : list de tuplas con los valores de cada fila
+        anchos   : dict {id: ancho_px} opcional
+        altura   : número máximo de filas visibles antes de activar scroll
+        """
+        contenedor = tk.Frame(parent, bg=self.CARD)
+        contenedor.pack(fill="both", expand=True)
 
-        fig = self._figura(6, 3.8)
+        cols = [c[0] for c in columnas]
+        tabla = ttk.Treeview(
+            contenedor,
+            columns=cols,
+            show="headings",
+            style="Dark.Treeview",
+            height=min(len(filas), altura)
+        )
+
+        for col_id, col_texto, col_anchor in columnas:
+            tabla.heading(col_id, text=col_texto)
+            ancho = anchos.get(col_id, 150) if anchos else 150
+            tabla.column(col_id, width=ancho, anchor=col_anchor)
+
+        tabla.tag_configure("par",   background="#243044")
+        tabla.tag_configure("impar", background=self.CARD)
+
+        for i, fila in enumerate(filas):
+            tabla.insert("", "end", values=fila, tags=("par" if i % 2 == 0 else "impar",))
+
+        scroll = ttk.Scrollbar(
+            contenedor,
+            orient="vertical",
+            command=tabla.yview,
+            style="Thin.Vertical.TScrollbar"
+        )
+        tabla.configure(yscrollcommand=scroll.set)
+
+        scroll.pack(side="right", fill="y")
+        tabla.pack(side="left", fill="both", expand=True)
+
+        return contenedor
+
+    # ══════════════════════════════════════════════════════
+    # GRÁFICO: FLUJO SEMANAL (LÍNEA — ÚLTIMOS 7 DÍAS)
+    # ══════════════════════════════════════════════════════
+    def _grafico_flujo_semanal(self, parent, datos):
+        card, cuerpo = self._card(parent, "Entradas vs deudas — últimos 7 días")
+
+        dias     = [d["dia"]     for d in datos]
+        ingresos = [d["ingreso"] for d in datos]
+        deudas   = [d["deuda"]   for d in datos]
+
+        fig = self._figura(6, 3.6)
         ax  = fig.add_subplot(111)
         self._estilo_ax(ax)
 
-        bars = ax.barh(nombres, montos, color=self.ACCENT_RED, height=0.55)
+        ax.plot(dias, ingresos, color=self.ACCENT_GREEN, marker="o", linewidth=2, markersize=5, label="Ingresos")
+        ax.plot(dias, deudas,   color=self.ACCENT_RED,   marker="o", linewidth=2, markersize=5, label="Deudas")
+        ax.fill_between(dias, ingresos, alpha=0.08, color=self.ACCENT_GREEN)
+        ax.fill_between(dias, deudas,   alpha=0.08, color=self.ACCENT_RED)
 
-        # etiquetas de valor
-        for bar, monto in zip(bars, montos):
-            ax.text(
-                bar.get_width() + max(montos) * 0.01,
-                bar.get_y() + bar.get_height() / 2,
-                f"${monto:,.0f}",
-                va="center",
-                color=self.TEXT_MUTED,
-                fontsize=8
-            )
-
-        ax.invert_yaxis()
-        ax.set_xlabel("Pesos ($)", color=self.PLOT_TEXT, fontsize=9)
-        ax.grid(axis="x", alpha=0.15, color="#475569")
+        ax.set_xticklabels(dias, rotation=35, ha="right", fontsize=8)
+        ax.grid(axis="y", alpha=0.15, color="#475569")
+        ax.legend(fontsize=9, frameon=False, labelcolor=self.TEXT_MUTED)
 
         self._embed_figura(fig, cuerpo)
         return card
 
     # ══════════════════════════════════════════════════════
-    # GRÁFICO: PASTEL DEUDA VS ABONO
+    # GRÁFICO: PASTEL DEUDA VS INGRESO GLOBAL
     # ══════════════════════════════════════════════════════
     def _grafico_pastel(self, parent, datos):
-        card, cuerpo = self._card(parent, "Deuda vs ingresos")
+        card, cuerpo = self._card(parent, "Deuda vs ingresos — global")
 
-        fig = Figure(figsize=(4.2, 3.8), facecolor=self.PLOT_BG)
+        fig = Figure(figsize=(4.2, 3.6), facecolor=self.PLOT_BG)
         ax  = fig.add_subplot(111)
         ax.set_facecolor(self.PLOT_BG)
 
-        colores = [self.ACCENT_RED, self.ACCENT_GREEN]
-        wedges, texts, autotexts = ax.pie(
+        wedges, _, autotexts = ax.pie(
             datos.values(),
             labels=None,
             autopct="%1.1f%%",
-            colors=colores,
+            colors=[self.ACCENT_RED, self.ACCENT_GREEN],
             startangle=90,
             wedgeprops={"linewidth": 2, "edgecolor": self.PLOT_BG}
         )
@@ -356,9 +461,7 @@ class panel_administrador_estadisticas(tk.Frame):
             [f"{k}  ${v:,.0f}" for k, v in datos.items()],
             loc="lower center",
             bbox_to_anchor=(0.5, -0.12),
-            ncol=1,
-            fontsize=9,
-            frameon=False,
+            ncol=1, fontsize=9, frameon=False,
             labelcolor=self.TEXT_MUTED
         )
 
@@ -367,40 +470,152 @@ class panel_administrador_estadisticas(tk.Frame):
         return card
 
     # ══════════════════════════════════════════════════════
-    # GRÁFICO: MOVIMIENTOS POR MES
+    # GRÁFICO: CLIENTES CON MAYOR DEUDA (BARRAS HORIZONTALES)
+    # ══════════════════════════════════════════════════════
+    def _grafico_barras_clientes(self, parent, datos):
+        card, cuerpo = self._card(parent, "Clientes con mayor deuda pendiente")
+
+        nombres = [d["cliente"]     for d in datos]
+        montos  = [d["total_deuda"] for d in datos]
+
+        # alto dinámico: 0.5 pulgadas por cliente, mínimo 3.6
+        alto = max(3.6, len(nombres) * 0.52)
+
+        fig = Figure(figsize=(5.5, alto), facecolor=self.PLOT_BG)
+        # margen izquierdo amplio para nombres largos
+        fig.subplots_adjust(left=0.38, right=0.88, top=0.95, bottom=0.08)
+        ax = fig.add_subplot(111)
+        self._estilo_ax(ax)
+
+        bars  = ax.barh(nombres, montos, color=self.ACCENT_RED, height=0.55)
+        max_m = max(montos) if montos else 1
+
+        for bar, monto in zip(bars, montos):
+            ax.text(
+                bar.get_width() + max_m * 0.01,
+                bar.get_y() + bar.get_height() / 2,
+                f"${monto:,.0f}",
+                va="center", color=self.TEXT_MUTED, fontsize=8
+            )
+
+        ax.invert_yaxis()
+        ax.set_xlabel("Pesos ($)", color=self.PLOT_TEXT, fontsize=9)
+        ax.grid(axis="x", alpha=0.15, color="#475569")
+
+        # contenedor con scroll vertical para cuando hay muchos clientes
+        scroll_frame = tk.Frame(cuerpo, bg=self.CARD)
+        scroll_frame.pack(fill="both", expand=True)
+
+        v_scroll = ttk.Scrollbar(
+            scroll_frame, orient="vertical", style="Thin.Vertical.TScrollbar"
+        )
+        v_scroll.pack(side="right", fill="y")
+
+        canvas_fig = FigureCanvasTkAgg(fig, scroll_frame)
+        widget = canvas_fig.get_tk_widget()
+        widget.pack(side="left", fill="both", expand=True)
+
+        v_scroll.configure(command=lambda *a: widget.yview(*a))
+        widget.configure(yscrollcommand=v_scroll.set)
+
+        sc = self._scroll_canvas
+        widget.bind("<MouseWheel>", lambda e: sc.yview_scroll(int(-1*(e.delta/120)), "units"))
+        widget.bind("<Button-4>",   lambda e: sc.yview_scroll(-1, "units"))
+        widget.bind("<Button-5>",   lambda e: sc.yview_scroll(1, "units"))
+
+        return card
+
+    # ══════════════════════════════════════════════════════
+    # TABLA: CLIENTES RIESGOSOS (sin pagar hace +30 días)
+    # ══════════════════════════════════════════════════════
+    def _tabla_clientes_riesgosos(self, parent, datos):
+        card, cuerpo = self._card(parent, "⚠️  Clientes riesgosos — sin pagar hace +30 días")
+
+        filas = [
+            (
+                d["cliente"],
+                f"{d['dias_sin_pagar']} días",
+                f"${d['total_pendiente']:,.0f}",
+                d["desde"]
+            )
+            for d in datos
+        ]
+
+        self._tabla(
+            cuerpo,
+            columnas=[
+                ("cliente", "Cliente",        "w"),
+                ("dias",    "Sin pagar",       "center"),
+                ("monto",   "Monto pendiente", "e"),
+                ("desde",   "Desde",           "center"),
+            ],
+            filas=filas,
+            anchos={"cliente": 180, "dias": 90, "monto": 130, "desde": 100}
+        )
+
+        return card
+
+    # ══════════════════════════════════════════════════════
+    # TABLA: RENDIMIENTO POR EMPLEADO
+    # ══════════════════════════════════════════════════════
+    def _tabla_rendimiento_empleados(self, parent, datos):
+        card, cuerpo = self._card(parent, "Fiado registrado y porcentaje recuperado por empleado")
+
+        filas = [
+            (
+                d["empleado"],
+                f"${d['total_fiado']:,.0f}",
+                f"${d['total_recuperado']:,.0f}",
+                f"{d['porcentaje']}%"
+            )
+            for d in datos
+        ]
+
+        self._tabla(
+            cuerpo,
+            columnas=[
+                ("empleado",   "Empleado",    "w"),
+                ("fiado",      "Total fiado", "e"),
+                ("recuperado", "Recuperado",  "e"),
+                ("porcentaje", "% cobrado",   "center"),
+            ],
+            filas=filas,
+            anchos={"empleado": 220, "fiado": 160, "recuperado": 160, "porcentaje": 100},
+            altura=6
+        )
+
+        return card
+
+    # ══════════════════════════════════════════════════════
+    # GRÁFICO: MOVIMIENTOS POR MES (BARRAS CON SCROLL HORIZONTAL)
     # ══════════════════════════════════════════════════════
     def _grafico_barras_por_mes(self, parent, datos):
-        card, cuerpo = self._card(parent, "Movimientos por mes")
+        card, cuerpo = self._card(parent, "Deuda y abono por mes")
 
-        meses  = [d["mes"] for d in datos]
+        meses  = [d["mes"]   for d in datos]
         deudas = [d["deuda"] for d in datos]
         abonos = [d["abono"] for d in datos]
 
-        # ancho dinámico según cantidad de meses
         ancho = max(11, len(meses) * 0.9)
-
-        fig = self._figura(ancho, 3.8)
+        fig = self._figura(ancho, 3.6)
         ax  = fig.add_subplot(111)
         self._estilo_ax(ax)
 
         x = range(len(meses))
         w = 0.38
-        ax.bar(x, deudas, width=w, label="Deuda",   color=self.ACCENT_RED,   alpha=0.9)
-        ax.bar([i + w for i in x], abonos, width=w, label="Ingreso", color=self.ACCENT_GREEN, alpha=0.9)
+        ax.bar(x,                deudas, width=w, label="Deuda",   color=self.ACCENT_RED,   alpha=0.9)
+        ax.bar([i+w for i in x], abonos, width=w, label="Ingreso", color=self.ACCENT_GREEN, alpha=0.9)
 
         ax.set_xticks([i + w / 2 for i in x])
         ax.set_xticklabels(meses, rotation=40, ha="right", fontsize=8)
         ax.grid(axis="y", alpha=0.15, color="#475569")
         ax.legend(fontsize=9, frameon=False, labelcolor=self.TEXT_MUTED)
 
-        # contenedor con scroll horizontal
         scroll_frame = tk.Frame(cuerpo, bg=self.CARD)
         scroll_frame.pack(fill="both", expand=True)
 
         h_scroll = ttk.Scrollbar(
-            scroll_frame,
-            orient="horizontal",
-            style="Thin.Horizontal.TScrollbar"
+            scroll_frame, orient="horizontal", style="Thin.Horizontal.TScrollbar"
         )
         h_scroll.pack(side="bottom", fill="x")
 
@@ -408,64 +623,42 @@ class panel_administrador_estadisticas(tk.Frame):
         widget = canvas_fig.get_tk_widget()
         widget.pack(side="top", fill="both", expand=True)
 
-        # vincular scroll horizontal al canvas de matplotlib
         h_scroll.configure(command=lambda *a: widget.xview(*a))
         widget.configure(xscrollcommand=h_scroll.set)
 
         sc = self._scroll_canvas
         widget.bind("<MouseWheel>", lambda e: sc.yview_scroll(int(-1*(e.delta/120)), "units"))
         widget.bind("<Button-4>",   lambda e: sc.yview_scroll(-1, "units"))
-        widget.bind("<Button-5>",   lambda e: sc.yview_scroll(1,  "units"))
+        widget.bind("<Button-5>",   lambda e: sc.yview_scroll(1, "units"))
 
         return card
 
     # ══════════════════════════════════════════════════════
-    # TABLA: DEUDAS MÁS ANTIGUAS
+    # TABLA: DEUDAS MÁS ANTIGUAS (con columna de días)
     # ══════════════════════════════════════════════════════
     def _tabla_deudas_antiguas(self, parent, datos):
         card, cuerpo = self._card(parent, "Deudas más antiguas sin pagar")
 
-        cols = ("cliente", "fecha", "monto")
-        tabla = ttk.Treeview(
-            cuerpo,
-            columns=cols,
-            show="headings",
-            style="Dark.Treeview",
-            height=min(len(datos), 8)
-        )
-
-        tabla.heading("cliente", text="Cliente")
-        tabla.heading("fecha",   text="Desde")
-        tabla.heading("monto",   text="Monto pendiente")
-
-        tabla.column("cliente", width=280, anchor="w")
-        tabla.column("fecha",   width=160, anchor="center")
-        tabla.column("monto",   width=180, anchor="e")
-
-        tabla.tag_configure("par",   background="#243044")
-        tabla.tag_configure("impar", background=self.CARD)
-
-        for i, d in enumerate(datos):
-            tag = "par" if i % 2 == 0 else "impar"
-            tabla.insert(
-                "", "end",
-                values=(
-                    d["cliente"],
-                    d["fecha"],
-                    f"${d['monto']:,.0f}"
-                ),
-                tags=(tag,)
+        filas = [
+            (
+                d["cliente"],
+                d["fecha"],
+                f"{d['dias']} días",
+                f"${d['monto']:,.0f}"
             )
+            for d in datos
+        ]
 
-        # scrollbar vertical interna minimalista
-        scroll_tabla = ttk.Scrollbar(
+        self._tabla(
             cuerpo,
-            orient="vertical",
-            command=tabla.yview,
-            style="Thin.Vertical.TScrollbar"
+            columnas=[
+                ("cliente", "Cliente",        "w"),
+                ("fecha",   "Desde",          "center"),
+                ("dias",    "Días pendiente", "center"),
+                ("monto",   "Monto",          "e"),
+            ],
+            filas=filas,
+            anchos={"cliente": 240, "fecha": 130, "dias": 120, "monto": 150}
         )
-        tabla.configure(yscrollcommand=scroll_tabla.set)
 
-        scroll_tabla.pack(side="right", fill="y")
-        tabla.pack(side="left", fill="both", expand=True)
         return card

@@ -323,3 +323,16 @@ class Ventana(tk.Tk):
         )
 
         self._cambiar_panel(panel)
+
+
+    # ==============================
+    # METODO PARA CAMVIAR TITULO DE LA VENTANA
+    # ==============================
+    def set_titulo(self, titulo):
+        """
+        Cambia el título de la ventana principal.
+
+        Args:
+            titulo (str): Nuevo título a mostrar en la barra de la ventana
+        """
+        self.title(titulo)

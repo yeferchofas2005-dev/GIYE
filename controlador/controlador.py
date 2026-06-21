@@ -160,6 +160,7 @@ class Controller:
         self.ventana = Ventana()                     # Instancia la GUI principal
         self.empleado_en_turno = None                # Diccionario/registro del empleado que inició sesión
         self.id_empleado_en_turno = None             # id del empleado en turno (int)
+        #self.ventana.set_titulo(f"GYIE - Gestión de Deudas y Abonos - Empleado: {self.id_empleado_en_turno}".format(self.empleado_en_turno['nombre'] if self.empleado_en_turno else "No identificado"))
         # Cuando se haga click en una fila de transacción, la vista llamará a mostrar_detalles_transaccion
         self.ventana.set_on_click_transaccion(self.mostrar_detalles_transaccion)
 
@@ -426,6 +427,7 @@ class Controller:
 
         # Mensaje de bienvenida
         ventana_emergente.mostrar_informacion("Bienvenido", f"Has iniciado sesión como {empleado['nombre']}.")
+        self.ventana.set_titulo(f"GYIE - Gestión de Deudas y Abonos - Empleado: {empleado['nombre']}")
 
         # Cargar el dashboard con las transacciones
         self.recargar_dashboard()
